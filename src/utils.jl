@@ -19,9 +19,7 @@ function max_window(sorted_vector::Vector{Int64}, window_size::Int64, score_func
             best_end = current_end
             best_score = current_score
         end
-        #=println("$current_start, $current_end")
-        println("$(sorted_vector[current_start]), $(sorted_vector[current_end])")
-        println("$current_score\n")=#
+        #=println("$current_start, $current_end");println("$(sorted_vector[current_start]), $(sorted_vector[current_end])");println("$current_score\n")=#
     end
     return best_score
 end

@@ -1,0 +1,13 @@
+name = "ReadSniper"
+uuid = "29ba435d-518f-4300-a2ec-e081324a79b4"
+authors = ["Periareion <periareion05@gmail.com> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

@@ -1,10 +1,5 @@
 module ReadSniper
-    include("include_all.jl")
 
-        export
+# Write your package code here.
 
-    # utils
-
-    max_window,
-
-end # module
+end
