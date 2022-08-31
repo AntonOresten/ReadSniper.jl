@@ -1,5 +1,8 @@
 module ReadSniper
 
-# Write your package code here.
+    # Write your package code here.
+
+    include("include_all.jl")
+
 
 end

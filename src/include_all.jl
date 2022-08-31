@@ -1,6 +1,7 @@
 
 using BioSequences
 using FASTX
-using PyPlot
+#using PyPlot
 
 include("utils.jl")
+include("kmers.jl")
