@@ -1,8 +1,7 @@
 module ReadSniper
-
     include("include_all.jl")
 
-        export
+    export
 
     # utils.jl
 
@@ -14,7 +13,6 @@ module ReadSniper
 
     create_kmer_vector,
     single_match_kmer_dict,
-    get_single_match_indices,
-
+    get_single_match_indices
 
 end
