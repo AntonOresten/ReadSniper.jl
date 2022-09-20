@@ -31,7 +31,7 @@ function max_window(vector::Vector{Int64}, window_size::Int64, score_function::F
         while current_end+1 <= len && vector[current_end+1] - vector[current_start] < window_size
             current_end += 1
         end
-        current_score = maximum_increasing_subsequence(vector[current_start:current_end])
+        current_score = score_function(vector[current_start:current_end])
         if current_score > best_score
             best_start = current_start
             best_end = current_end
@@ -39,11 +39,11 @@ function max_window(vector::Vector{Int64}, window_size::Int64, score_function::F
         end
         #=println("$current_start, $current_end");println("$(sorted_vector[current_start]), $(sorted_vector[current_end])");println("$current_score\n")=#
     end
-    println(best_start, best_end)
+    #println(best_start, best_end)
     return best_score
 end
 
-@show maximum_increasing_subsequence([1,-1,2,3,-5,-4,-5,4,5,6,7])
+#@show maximum_increasing_subsequence([1,-1,2,3,-5,-4,-5,4,5,6,7])
 
 #@show max_window([1,2,5,6,9,10,11,15,16,17,20,25], 6)
 
