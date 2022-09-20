@@ -1,18 +1,23 @@
+
 module ReadSniper
-    include("include_all.jl")
 
-    export
+include("include_all.jl")
 
-    # utils.jl
+export
 
-    size_score,
-    maximum_increasing_subsequence,
-    max_window,    
+# utils.jl
 
-    # kmers.jl
+longest_increasing_subsequence,
+max_window,    
 
-    create_kmer_vector,
-    single_match_kmer_dict,
-    get_single_match_indices
+# kmers.jl
 
-end
+create_kmer_vector,
+single_match_kmer_dict,
+get_single_match_indices,
+
+# reads
+
+retrieve_reads_sm
+
+end # module
