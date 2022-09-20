@@ -3,6 +3,9 @@ uuid = "29ba435d-518f-4300-a2ec-e081324a79b4"
 authors = ["Periareion <periareion05@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+
+
 [compat]
 julia = "1"
 

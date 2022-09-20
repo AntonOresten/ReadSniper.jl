@@ -2,6 +2,9 @@
 using BioSequences
 using FASTX
 
+
+module reads
+
 include("utils.jl")
 include("kmers.jl")
 
@@ -122,4 +125,11 @@ function retrieve_reads_mm(
     close(writer)
     close(reader1)
     close(reader2)
+end
+
+export
+
+retrieve_reads_sm,
+retrieve_reads_mm
+
 end
