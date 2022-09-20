@@ -1,7 +1,6 @@
 
 using BioSequences
 
-
 function create_kmer_vector(seq::LongDNASeq, k::Int64)
     return [kmer for (_, kmer) in each(DNAMer{k}, seq)]
 end
