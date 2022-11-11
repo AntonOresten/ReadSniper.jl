@@ -2,7 +2,7 @@
 using ReadSniper
 using Test
 
-dir = "C:/Users/anton/RSData"
+#=dir = "C:/Users/anton/RSData"
 
 retrieve_reads(
     dir*"/queries/picorna_nuevo_rc.fasta",
@@ -12,7 +12,7 @@ retrieve_reads(
     ),
     k=10,
     threshold=25,
-)
+)=#
 
 #=
 @testset "ReadSniper.jl" begin
