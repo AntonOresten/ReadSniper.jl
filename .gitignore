@@ -1,2 +1,8 @@
+<<<<<<< Updated upstream
 /Manifest.toml
 *output
+=======
+/.vscode
+SRR*
+picorna_nuevo_rc*
+>>>>>>> Stashed changes
