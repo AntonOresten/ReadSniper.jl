@@ -69,7 +69,7 @@ end
 
 function multi_match_indices(
         seq::LongDNASeq,
-        kmer_dict::Dict{DNAMer{k}, Int64},
+        kmer_dict::Dict{DNAMer{k}, Vector{Int64}},
         step::Int64=1) where {k}
     index_vectors::Vector{Vector{Int64}} = [get(kmer_dict, kmer, Int64[]) for (_, kmer) in each(DNAMer{k}, seq, step)]
     non_zero_index_vectors::Vector{Vector{Int64}} = fill(Int64[], count(v->!isempty(v), index_vectors))

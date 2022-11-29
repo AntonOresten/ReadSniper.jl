@@ -56,3 +56,12 @@ function filter_out_empty_vectors(vectors::Vector{Vector{Int64}})
 
     return non_empty_vectors
 end
+
+
+function increment_value(dict::Dict{Int64, Int64}, key::Int64)
+    if haskey(dict, key)
+        dict[key] += 1
+    else
+        dict[key] = 1
+    end
+end

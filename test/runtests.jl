@@ -12,6 +12,8 @@ retrieve_reads(
     ),
     k=10,
     threshold=25,
+    step=1,
+    single_match=false
 )
 
 #=

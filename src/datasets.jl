@@ -16,4 +16,18 @@ function filter_fastq(fastq_file, read_ids::Set{Int64})
     close(reader)
 end
 
+function fqRecordCount(fastq_file::String)
+    reader = FASTQ.Reader(open(fastq_file, "r"))
+    k = 0
+    for record in reader
+        k += 1
+    end
+    close(reader)
+    return k
+end
+
+function faRecordCount(fasta_file::String)
+    nothing
+end
+
 # TODO: Function for getting the best datasets out of a CSV file with pident and coverage values?
