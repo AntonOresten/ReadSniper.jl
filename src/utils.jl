@@ -12,34 +12,6 @@ function lis(vec::Vector{Int64})
 end
 
 
-function max_window(vector::Vector{Int64}, window_size::Int64, score_function::Function=lis)
-    len = length(vector)
-    current_end::Int64 = 0
-    best_start::Int64 = 0
-    best_end::Int64 = 0
-    best_score::Number = 0
-    for current_start::Int64 in 1:len
-        while current_end+1 <= len && vector[current_end+1] - vector[current_start] < window_size
-            current_end += 1
-        end
-        current_score = score_function(vector[current_start:current_end])
-        if current_score > best_score
-            best_start = current_start
-            best_end = current_end
-            best_score = current_score
-        end
-    end
-    return best_score, best_start, best_end
-end
-
-
-function stack_index_range!(vector::Vector{Int64}, index_range::UnitRange{Int64})
-    for i in index_range
-        vector[i] += 1
-    end
-end
-
-
 function filter_out_empty_vectors(vectors::Vector{Vector{Int64}})
 
     # Make space for non-empty vectors
@@ -58,7 +30,7 @@ function filter_out_empty_vectors(vectors::Vector{Vector{Int64}})
 end
 
 
-function increment_value(dict::Dict{Int64, Int64}, key::Int64)
+function increment_dict_value!(key::Int64, dict::Dict{Int64, Int64})
     if haskey(dict, key)
         dict[key] += 1
     else
