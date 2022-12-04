@@ -12,8 +12,8 @@ retrieve_reads(
     ),
     output_dir="output",
     k=10,
-    step=1,
-    single_match=false
+    step=2,
+    single_match=true,
 )
 
 

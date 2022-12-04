@@ -7,7 +7,7 @@ module ReadSniper
     import Dates
 
     include("utils.jl")
-    include("plots.jl")
+    include("plot.jl")
     include("kmers.jl")
     include("datasets.jl")
     include("read_iteration.jl")

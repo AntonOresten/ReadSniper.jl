@@ -1,6 +1,5 @@
 
 
-
 function fetch_query_data(
     query_file::String,
     k::Int64,
@@ -9,7 +8,7 @@ function fetch_query_data(
 
     reader = FASTA.Reader(open(query_file, "r"))
 
-    query_sequence = FASTA.sequence(LongDNASeq, first(reader))
+    query_sequence = FASTA.sequence(LongDNA{4}, first(reader))
     query_length = length(query_sequence)
     query_kmer_vector = create_kmer_vector(query_sequence, k)
 
@@ -37,7 +36,7 @@ function filter_fastq(fastq_file, read_ids::Set{Int64})
     writer = FASTA.Writer(open(output_file, "w"))
     for (read_id, record) in enumerate(reader)
         if read_id in read_ids
-            write(writer, FASTA.Record(filename*".$read_id", FASTQ.sequence(LongDNASeq, record)))
+            write(writer, FASTA.Record(filename*".$read_id", FASTQ.sequence(LongDNA{4}, record)))
         end
     end
     close(writer)

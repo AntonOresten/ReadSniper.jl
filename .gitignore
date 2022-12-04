@@ -1,3 +1,3 @@
-/Manifest.toml
-*output
-*.png
+Manifest.toml
+/test/output
+/*.png
