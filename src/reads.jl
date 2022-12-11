@@ -8,18 +8,33 @@ struct ReadMetadata
     range_end::Int64
 end
 
-# reader struct
-struct DatasetReader
+
+struct DatafileReader
     reader::FASTQ.Reader
+    id::Int64
+    window::Int64
     first_index::Int64
     last_index::Int64
 end
 
-function skip_to_index(datasetreader::DatasetReader)
-    reader = datasetreader.reader
-    for _ in 1:datasetreader.first_index-1
-        next!(reader)
+calc_first_index(id, window, remainder) = window * (id-1) + 1
+calc_last_index(id, window, remainder) = window * id # + (id == 1 ? remainder : 0)
+
+function DatafileReader(reader::FASTQ.Reader, id::Int64, window::Int64, remainder::Int64)
+    first_index = calc_first_index(id, window, remainder)
+    last_index = calc_last_index(id, window, remainder)
+    df_reader = DatafileReader(reader, id, last_index-first_index+1, first_index, last_index)
+    return skip_to_window(df_reader)
+end
+
+
+function skip_to_window(datafile_reader::DatafileReader)
+    reader = datafile_reader.reader
+    for _ in 1:datafile_reader.first_index-1
+        iterate(reader)
     end
+    return datafile_reader
+end
 
 
 function split_read_sequence(seq::LongDNA{4})
@@ -54,6 +69,8 @@ function highest_score_subseq_in_window(vector::Vector{Int64}, window_size::Int6
     return best_score, best_start, best_end
 end
 
+export highest_score_subseq_in_window
+
 
 """
 Uses a single-match dictionary when scanning read
@@ -63,13 +80,13 @@ Works best with small genomes (or large k-values) due to k-mers only being assig
 function analyze_record(
     record::FASTQ.Record,
     query_kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Int64},
-    k_::Int64,
+    k_1::Int64,
     step::Int64,
     threshold::Int64,
 )
     read_length::Int64 = seqsize(record)
     read_sequence::LongDNA{4} = FASTQ.sequence(LongDNA{4}, record)
-    read_match_indices::Vector{Int64} = single_match_indices(read_sequence, query_kmer_dict, k_, step)
+    read_match_indices::Vector{Int64} = single_match_indices(read_sequence, query_kmer_dict, k_1, step)
     sort!(read_match_indices)
     if length(read_match_indices) < threshold
         return 0, 1, 1, [1]
@@ -85,13 +102,13 @@ Uses a multi-match dictionary when scanning read
 function analyze_record(
     record::FASTQ.Record,
     query_kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int64}},
-    k_::Int64,
+    k_1::Int64,
     step::Int64,
     threshold::Int64,
 )
     read_length::Int64 = seqsize(record)
     read_sequence::LongDNA{4} = FASTQ.sequence(LongDNA{4}, record)
-    read_match_index_vectors::Vector{Vector{Int64}} = multi_match_indices(read_sequence, query_kmer_dict, k_, step)
+    read_match_index_vectors::Vector{Vector{Int64}} = multi_match_indices(read_sequence, query_kmer_dict, k_1, step)
     
     if length(read_match_index_vectors) < threshold
         return 0, 1, 1, [1]

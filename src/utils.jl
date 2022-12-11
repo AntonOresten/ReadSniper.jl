@@ -37,3 +37,5 @@ function increment_dict_value!(key::Int64, dict::Dict{Int64, Int64})
         dict[key] = 1
     end
 end
+
+export increment_dict_value!

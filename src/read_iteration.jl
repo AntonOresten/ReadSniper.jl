@@ -2,76 +2,101 @@
 # TODO: add struct for Reader with given start and end
 
 function progress_bar_values(
-    reads_sniped::Int64, reads_scanned::Int64, reads_total::Int64,
-    k::Int64, step::Int64, match_method::Type, threads_used::Int64,
+    reads_scanned::Int64, reads_total::Int64, reads_sniped::Int64,
+    file_number::Int64, number_of_files::Int64,
+    k::Int64, step::Int64, match_method::Type, number_of_threads::Int64,
 )
     return [
-        (Symbol("Reads sniped"), reads_sniped), (Symbol("Reads scanned"), reads_scanned),
-        (Symbol("Number of reads"), reads_total), (Symbol("k-mer length"), k), (Symbol("k-mer step"), step),
-        (Symbol("Match method"), (match_method == Int64 ? "Single" : "Multi")), (Symbol("Threads"), threads_used),
+        (Symbol("Reads scanned"), "$reads_scanned/$reads_total"), (Symbol("Reads sniped"), reads_sniped),
+        (Symbol("Files scanned"), "$file_number/$number_of_files"),
+        (Symbol("k-mer length"), k), (Symbol("k-mer step"), step),
+        (Symbol("Match method"), (match_method == Int64 ? "Single" : "Multi")), (Symbol("Threads"), number_of_threads),
     ]
 end
 
+
 function scan_dataset(
-    readers::Vector, 
-    record_count::Int64,
+    dataset::Vector{String},
     query_kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, T},
     k::Int64,
     score_distribution_dict::Dict{Int64, Int64};
-    step::Int64=1,
-    threshold::Int64=10,
+    step::Int64,
+    threshold::Int64,
+    number_of_threads::Int64=1,
 ) where T <: Union{Int64, Vector{Int64}}
 
-    k_ = k - 1
+    k_1 = k - 1
     threshold = ceil(Int64, threshold / step)
 
-    reader_count = length(readers)
-    read_count = record_count * reader_count
-    reads::Vector{Set{ReadMetadata}} = [Set() for _ in readers]
+    record_count = fqRecordCount(dataset[1])
+    datafile_count = length(dataset)
+    read_count = record_count * datafile_count
     
-    # Vector{Int} instead of Int to prevent two readers from adding to one at the same time
-    reads_sniped = zeros(Int64, reader_count)
+    # Preventing threads from adding to one integer/set at the same time
+    reads_scanned = zeros(Int64, number_of_threads)
+    reads_sniped = zeros(Int64, number_of_threads)
+    reads = [Set{ReadMetadata}() for _ in 1:number_of_threads]
+
+    window = record_count ÷ number_of_threads
+    remainder = record_count % number_of_threads
 
     println()
-    threads_used = Threads.nthreads()
     progress_bar = Progress(read_count, desc="Sniping reads... ", color=:white)
-    Threads.@threads for (i, reader) in collect(enumerate(readers))
-        for read_number in 1:record_count
-            record = iterate(reader)[1]
+    for (datafile_num, datafile) in enumerate(dataset)
 
-            max_matches_in_range, range_start, range_end, query_indices = analyze_record(record, query_kmer_dict, k_, step, threshold)
-            
-            if max_matches_in_range > threshold
-                read = ReadMetadata(read_number, i, max_matches_in_range, query_indices[range_start], query_indices[range_end])
-                push!(reads[i], read)
-                reads_sniped[i] += 1
-            end
+        # DatafileReaders each have a designated window of each dataset
+        datafile_readers::Vector{DatafileReader} = [
+            DatafileReader(FASTQ.Reader(open(datafile, "r")), reader_id, window, remainder)
+            for reader_id in 1:number_of_threads]
+        
+        #for df in datafile_readers
+        #    println(df)
+        #end
 
-            increment_dict_value!(max_matches_in_range, score_distribution_dict)
-            
-            if (i == 1) && (read_number % 369 == 0)
-                update!(progress_bar, 2*read_number, showvalues = progress_bar_values(
-                    sum(reads_sniped), 2*read_number, read_count,
-                    k, step, T, threads_used))
+        @sync begin
+            Threads.@threads for reader_id in 1:number_of_threads
+                df_reader = datafile_readers[reader_id]
+                window = df_reader.window
+                reader = df_reader.reader
+
+                for (read_number, record) in enumerate(reader)
+                    if read_number > window break end
+
+                    max_matches_in_range, range_start, range_end, query_indices = analyze_record(record, query_kmer_dict, k_1, step, threshold)
+
+                    reads_scanned[reader_id] += 1
+                    increment_dict_value!(max_matches_in_range, score_distribution_dict)
+
+                    if max_matches_in_range > threshold
+                        read = ReadMetadata(df_reader.first_index+read_number-1, datafile_num, step*max_matches_in_range, query_indices[range_start], query_indices[range_end])
+                        push!(reads[reader_id], read)
+                        reads_sniped[reader_id] += 1
+                    end
+
+                    if (reader_id == 1) && iszero(read_number % 369)
+                        sum_reads_scanned = sum(reads_scanned)
+                        update!(progress_bar, sum_reads_scanned, showvalues = progress_bar_values(
+                            sum_reads_scanned, read_count, sum(reads_sniped),
+                            datafile_num, datafile_count,
+                            k, step, T, number_of_threads))
+                    end
+                end
             end
-            #push!(read_ids[i], read_num)
-            #stack_index_range!(coverage, sorted_indices[start_index]:sorted_indices[end_index])
         end
     end
-
+    
     update!(progress_bar, read_count, :green, showvalues = progress_bar_values(
-        sum(reads_sniped), read_count, read_count,
-        k, step, T, threads_used))
+        sum(reads_scanned), read_count, sum(reads_sniped),
+        datafile_count, datafile_count,
+        k, step, T, number_of_threads))
     finish!(progress_bar)
-    println()
-
     return reads
 end
 
 
 function retrieve_reads(
     query_file::String,
-    dataset::Tuple{String, String};
+    dataset::Vector{String};
     output_dir::String="output",
     k::Int64=10,
     step::Int64=1,
@@ -81,19 +106,17 @@ function retrieve_reads(
         mkdir(output_dir)
     end
 
+    number_of_threads = Threads.nthreads()
+    #addprocs(number_of_threads)
+
     query_sequence, query_length, query_kmer_dict = fetch_query_data(query_file, k, single_match)
     score_distribution_dict::Dict{Int64, Int64} = Dict()
 
-    # Two sets of reads due to paired-end sequencing
-    dataset_1, dataset_2 = dataset
-
-    reader1 = FASTQ.Reader(open("$dataset_1", "r"))
-    reader2 = FASTQ.Reader(open("$dataset_2", "r"))
-
-    record_count = fqRecordCount(dataset_1)
-
-    reads_1, reads_2 = scan_dataset([reader1, reader2], record_count, query_kmer_dict, k, score_distribution_dict, step=step, threshold=10)
-    read_struct_array = StructArray([reads_1..., reads_2...])
+    read_set_vector = scan_dataset(
+        dataset, query_kmer_dict, k, score_distribution_dict,
+        step=step, threshold=9, number_of_threads=number_of_threads
+    )
+    read_struct_array = StructArray(vcat([collect(read_set) for read_set in read_set_vector]...))
 
     println("Saving results...")
     CSV.write("$output_dir/reads.csv", read_struct_array)
