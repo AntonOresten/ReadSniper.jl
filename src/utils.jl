@@ -1,36 +1,25 @@
 
 
-function lis(vec::Vector{Int64})
-    n = length(vec)
+function lis(vector::Vector{T}) where {T <: Int}
+    n = length(vector)
     lis_values = zeros(Int64, n)
     for i in 2:n
         for j in 1:i
-            if vec[i] > vec[j] && lis_values[i] < lis_values[j] + 1
+            if vector[i] > vector[j] && lis_values[i] < lis_values[j] + 1
                 lis_values[i] = lis_values[j] + 1
-    end end end
+            end
+        end 
+    end
     return maximum(lis_values) + 1
 end
 
-
-function filter_out_empty_vectors(vectors::Vector{Vector{Int64}})
-
-    # Make space for non-empty vectors
-    number_of_non_empty::Int64 = count(v->!isempty(v), vectors)
-    non_empty_vectors::Vector{Vector{Int64}} = fill(Int64[], number_of_non_empty)
-    
-    i = 0
-    for v in vectors
-        if !isempty(v)
-            i += 1
-            non_empty_vectors[i] = v
-        end
-    end
-
-    return non_empty_vectors
-end
+export lis
 
 
-function increment_dict_value!(key::Int64, dict::Dict{Int64, Int64})
+function increment_dict_value!(
+    key,
+    dict::Dict
+)
     if haskey(dict, key)
         dict[key] += 1
     else
@@ -39,3 +28,16 @@ function increment_dict_value!(key::Int64, dict::Dict{Int64, Int64})
 end
 
 export increment_dict_value!
+
+
+function create_dir(dir::String)
+    if isdir(dir)
+        return
+    end
+
+    parent_dir, folder = splitdir(dir)
+    if !(parent_dir == "")
+        create_dir(parent_dir)
+    end
+    mkdir(dir)
+end

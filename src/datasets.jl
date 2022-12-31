@@ -3,9 +3,7 @@
 function fetch_query_data(
     query_file::String,
     k::Int64,
-    single_match::Bool=false,
 )
-
     reader = FASTA.Reader(open(query_file, "r"))
 
     query_sequence = FASTA.sequence(LongDNA{4}, first(reader))
@@ -14,16 +12,21 @@ function fetch_query_data(
 
     close(reader)
 
-    if single_match
-        query_kmer_dict = single_match_kmer_dict(query_kmer_vector)
-    else
-        query_kmer_dict = multi_match_kmer_dict(query_kmer_vector)
-    end
+    query_kmer_dict = kmer_index_dict(query_kmer_vector)
 
     return query_sequence, query_length, query_kmer_dict
 end
 
 export fetch_query_data
+
+
+function fasta_first_seqlen(fasta_file::String)
+    reader = FASTA.Reader(open(fasta_file, "r"))
+    sequence = FASTA.sequence(LongDNA{4}, first(reader))
+    len = length(sequence)
+    close(reader)
+    return len
+end
 
 
 """
@@ -46,10 +49,12 @@ end
 export filter_fastq
 
 
-function fqRecordCount(fastq_file::String)
-    reader = FASTQ.Reader(open(fastq_file, "r"))
+function count_fastq_records(fastq_file::String)
     k = 0
-    for _ in reader
+    record = FASTQ.Record()
+    reader = FASTQ.Reader(open(fastq_file, "r"))
+    while !eof(reader)
+        read!(reader, record)
         k += 1
     end
     close(reader)
@@ -58,4 +63,17 @@ end
 
 export fqRecordCount
 
+
+function split_read_sequence(seq::LongDNA{4})
+    half_len = length(seq) ÷ 2
+    return seq[1:half_len], seq[half_len+1:end]
+end
+
 # TODO: Function for getting the best datasets out of a CSV file with pident and coverage values?
+
+#=
+function quick_fastq_stats(fastq_file::String)
+    reader = FASTQ.Reader(open(fastq_file_file, "r"))
+    median_read_length = nothing
+end
+=#

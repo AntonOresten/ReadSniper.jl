@@ -1,4 +1,5 @@
 Manifest.toml
-/.vscode/
-/test/output
-/*.png
+.vscode
+output
+*.png
+*.ipynb
