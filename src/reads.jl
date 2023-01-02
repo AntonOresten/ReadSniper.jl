@@ -4,7 +4,7 @@ struct ReadResult
     read_number::Int32
     ref_range_start::Int32
     ref_range_end::Int32
-    kmer_match_count::Int32
+    kmer_matches::Int32
 end
 
 
@@ -33,16 +33,16 @@ export highest_score_subseq_in_window
 
 function scan_read(
     config::Config,
-    read_number::Int32,
+    read_number::Int,
     record::FASTQ.Record,
     query_kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int64}},
 )
-    read_length::Int64 = seqsize(record)
+    read_length::Int = seqsize(record)
     read_sequence::LongDNA{4} = sequence(LongDNA{4}, record)
-    match_indices_vector::Vector{Vector{Int64}} = kmer_match_indices(read_sequence, query_kmer_dict, config.k, config.step)
+    match_indices_vector::Vector{Vector{Int}} = kmer_match_indices(read_sequence, query_kmer_dict, config.k, config.step)
     
     if length(match_indices_vector) == 0
-        return ReadResult(read_number, zero(Int32), zero(Int32), zero(Int32))
+        return ReadResult(Int32(read_number), zero(Int32), zero(Int32), zero(Int32))
     end
     
     sorted_match_indices::Vector{Int64} = sort(vcat(match_indices_vector...))
@@ -50,5 +50,5 @@ function scan_read(
     ref_range_start::Int64 = sorted_match_indices[range_start]
     ref_range_end::Int64 = sorted_match_indices[range_end]
 
-    ReadResult(read_number, Int32(ref_range_start), Int32(ref_range_end), Int32(config.step*max_matches_in_range))
+    ReadResult(Int32(read_number), Int32(ref_range_start), Int32(ref_range_end), Int32(config.step*max_matches_in_range))
 end

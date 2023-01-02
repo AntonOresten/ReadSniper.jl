@@ -36,7 +36,7 @@ end
     nothing
 end
 
-#=
+
 @testset "API.jl" begin
     snipe_reads(
         "C:/Users/anton/RSData/reference/picorna_nuevo_rc.fasta", 
@@ -46,4 +46,3 @@ end
         k=8, step=2,
     )
 end
-=#

@@ -1,6 +1,6 @@
 
 
-function lis(vector::Vector{T}) where {T <: Int}
+function lis(vector::Vector{<:Integer})
     n = length(vector)
     lis_values = zeros(Int64, n)
     for i in 2:n
@@ -28,16 +28,3 @@ function increment_dict_value!(
 end
 
 export increment_dict_value!
-
-
-function create_dir(dir::String)
-    if isdir(dir)
-        return
-    end
-
-    parent_dir, folder = splitdir(dir)
-    if !(parent_dir == "")
-        create_dir(parent_dir)
-    end
-    mkdir(dir)
-end

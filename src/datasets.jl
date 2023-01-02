@@ -1,7 +1,7 @@
 
 
 function fetch_query_data(
-    query_file::String,
+    query_file::AbstractString,
     k::Int64,
 )
     reader = FASTA.Reader(open(query_file, "r"))
@@ -20,13 +20,34 @@ end
 export fetch_query_data
 
 
-function fasta_first_seqlen(fasta_file::String)
+function fasta_first_seqlen(fasta_file::AbstractString)
     reader = FASTA.Reader(open(fasta_file, "r"))
     sequence = FASTA.sequence(LongDNA{4}, first(reader))
     len = length(sequence)
     close(reader)
     return len
 end
+
+
+function analyse_dataset(
+    config::Config,
+    query_file::AbstractString,
+    datafiles_paths::Vector{<:AbstractString},
+)
+    query_sequence, query_length, query_kmer_dict = fetch_query_data(query_file, config.k)
+    match_frequency_dict::Dict{Int32, Int32} = Dict()
+
+    read_result_sets, mean_read_length = parallel_scanning(config, datafiles_paths, query_kmer_dict, match_frequency_dict)
+    read_result_SOA = sort!(StructArray(vcat([collect(rr_set) for rr_set in read_result_sets]...)), by=result->result.kmer_matches, rev=true)
+    # SOA: Structure-Of-Arrays
+
+    sorted_match_bins = sort!(collect(match_frequency_dict), by=pair->pair[1])
+    matches, frequency = getindex.(sorted_match_bins, 1), getindex.(sorted_match_bins, 2)
+
+    return read_result_SOA, mean_read_length, (matches=matches, frequency=frequency)
+end
+
+export analyse_dataset
 
 
 """
@@ -49,7 +70,7 @@ end
 export filter_fastq
 
 
-function count_fastq_records(fastq_file::String)
+function count_fastq_records(fastq_file::AbstractString)
     k = 0
     record = FASTQ.Record()
     reader = FASTQ.Reader(open(fastq_file, "r"))
@@ -61,18 +82,11 @@ function count_fastq_records(fastq_file::String)
     return k
 end
 
-export fqRecordCount
+export count_fastq_records
 
-
-function split_read_sequence(seq::LongDNA{4})
-    half_len = length(seq) ÷ 2
-    return seq[1:half_len], seq[half_len+1:end]
-end
-
-# TODO: Function for getting the best datasets out of a CSV file with pident and coverage values?
 
 #=
-function quick_fastq_stats(fastq_file::String)
+function quick_fastq_stats(fastq_file::AbstractString)
     reader = FASTQ.Reader(open(fastq_file_file, "r"))
     median_read_length = nothing
 end
