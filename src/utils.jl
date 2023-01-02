@@ -28,3 +28,18 @@ function increment_dict_value!(
 end
 
 export increment_dict_value!
+
+
+function push_or_add!(
+    key::KeyType,
+    value::ValueType,
+    dict::Dict{KeyType, Vector{ValueType}},
+) where (KeyType) where (ValueType)
+    if haskey(dict, key)
+        push!(dict[key], value)
+    else
+        dict[key] = [value]
+    end
+end
+
+export push_or_add!

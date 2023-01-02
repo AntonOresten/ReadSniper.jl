@@ -19,8 +19,8 @@ end
     @test create_kmer_vector(dna"ACGTACGT", 4) == [dna"ACGT", dna"CGTA", dna"GTAC", dna"TACG", dna"ACGT"]
 
     @testset "kmer index dictionaries" begin
-        @test kmer_index_dict(dna"ACGTACGT", 4) == Dict(dna"ACGT" => [1, 5], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
-        @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4), 4) == [[1, 5], [2]]
+        @test kmer_index_dict(dna"ACGTACGT", 4, false) == Dict(dna"ACGT" => [1, 5], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
+        @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4, false), 4) == [[1, 5], [2]]
     end
 end
 
@@ -36,14 +36,13 @@ end
     nothing
 end
 
-#=
+
 @testset "API.jl" begin
     snipe_reads(
-        "C:/Users/anton/RSData/reference/picorna_nuevo_rc.fasta", 
+        "C:/Users/anton/RSData/reference/reference.fasta", 
         "C:/Users/anton/RSData/datasets/fastq-files/SRR10873757",
         ["SRR10873757_1.fastq", "SRR10873757_2.fastq"],
         output_dir="output",
         k=8, step=2,
     )
 end
-=#
