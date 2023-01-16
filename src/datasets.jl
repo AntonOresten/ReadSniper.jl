@@ -1,93 +1,92 @@
 
 
-function fetch_query_data(
-    query_file::AbstractString,
-    k::Int64,
-)
-    reader = FASTA.Reader(open(query_file, "r"))
+struct Reference
+    path::AbstractString
+    sequence::LongDNA{4}
+    gc_content::Float64
+    length::Int
+    kmer_vector::Vector{LongDNA{4}}
+    kmer_dict::Dict{LongDNA{4}, Vector{Int}}
+    unique_kmer_count::Int
+end
 
-    query_sequence = FASTA.sequence(LongDNA{4}, first(reader))
-    query_length = length(query_sequence)
-    query_kmer_vector = create_kmer_vector(query_sequence, k)
+function Reference(
+    path::AbstractString,
+    k::Int,
+)::Reference
 
+    reader = FASTA.Reader(open(path, "r"))
+    record = first(reader)
     close(reader)
 
-    query_kmer_dict = kmer_index_dict(query_kmer_vector)
+    seq = sequence(LongDNA{4}, record)
+    kmer_vector = create_kmer_vector(seq, k)
+    kmer_dict = kmer_index_dict(kmer_vector)
+    unique_kmer_count = length(unique(keys(kmer_dict)))
 
-    return query_sequence, query_length, query_kmer_dict
+    Reference(
+        path,
+        seq,
+        gc_content(seq),
+        length(seq),
+        kmer_vector,
+        kmer_dict,
+        unique_kmer_count,
+    )
 end
 
-export fetch_query_data
-
-
-function fasta_first_seqlen(fasta_file::AbstractString)
-    reader = FASTA.Reader(open(fasta_file, "r"))
-    sequence = FASTA.sequence(LongDNA{4}, first(reader))
-    len = length(sequence)
-    close(reader)
-    return len
-end
-
-
-function analyse_dataset(
-    config::Config,
-    query_file::AbstractString,
-    datafiles_paths::Vector{<:AbstractString},
-)
-    query_sequence, query_length, query_kmer_dict = fetch_query_data(query_file, config.k)
-    match_frequency_dict::Dict{Int32, Int32} = Dict()
-
-    read_result_sets, mean_read_length = parallel_scanning(config, datafiles_paths, query_kmer_dict, match_frequency_dict)
-    read_result_SOA = sort!(StructArray(vcat([collect(rr_set) for rr_set in read_result_sets]...)), by=result->result.kmer_matches, rev=true)
-    # SOA: Structure-Of-Arrays
-
-    sorted_match_bins = sort!(collect(match_frequency_dict), by=pair->pair[1])
-    matches, frequency = getindex.(sorted_match_bins, 1), getindex.(sorted_match_bins, 2)
-
-    return read_result_SOA, mean_read_length, (matches=matches, frequency=frequency)
-end
-
-export analyse_dataset
+export Reference
 
 
 """
-Returns the reads whose indices are contained in a given set
+Assumes that the first N reads are representative of the whole both in terms of read length and GC content.
+Sample size can be set to Inf, such that all read lengths and GC contents get counted.
 """
-function filter_fastq(fastq_file, read_ids::Set{Int64})
-    filename = split(fastq_file, ".")[1]
-    output_file = filename*"-filtered.fasta"
-    reader = FASTQ.Reader(open(fastq_file, "r"))
-    writer = FASTA.Writer(open(output_file, "w"))
-    for (read_id, record) in enumerate(reader)
-        if read_id in read_ids
-            write(writer, FASTA.Record(filename*".$read_id", FASTQ.sequence(LongDNA{4}, record)))
-        end
+function sample_fasta(path::AbstractString, sample_size::Number=1000)
+    read_count::Int = 0
+
+    read_length_sum::Int = 0
+    gc_content_sum::Float64 = 0.0
+
+    reader = FASTA.Reader(open(path, "r"))
+    
+    for record in reader
+        read_count += 1
+
+        read_length_sum += seqsize(record)
+        gc_content_sum += gc_content(sequence(LongDNA{4}, record))
+        if read_count >= sample_size break end
     end
-    close(writer)
-    close(reader)
-end
-
-export filter_fastq
-
-
-function count_fastq_records(fastq_file::AbstractString)
-    k = 0
-    record = FASTQ.Record()
-    reader = FASTQ.Reader(open(fastq_file, "r"))
-    while !eof(reader)
-        read!(reader, record)
-        k += 1
+    
+    for _ in reader
+        read_count += 1
     end
+
     close(reader)
-    return k
+
+    mean_read_length = read_length_sum ÷ sample_size
+    mean_gc_content = gc_content_sum / sample_size
+
+    return read_count, mean_read_length, mean_gc_content
 end
 
-export count_fastq_records
 
-
-#=
-function quick_fastq_stats(fastq_file::AbstractString)
-    reader = FASTQ.Reader(open(fastq_file_file, "r"))
-    median_read_length = nothing
+struct FASTAMetadata
+    path::AbstractString
+    file_size::Int
+    read_count::Int
+    read_length::Int
+    gc_content::Float64
+    #index?
 end
-=#
+
+function FASTAMetadata(path::AbstractString)::FASTAMetadata
+    FASTAMetadata(path, filesize(path), sample_fasta(path)...)
+end
+
+function FASTAMetadata(paths::Vector{<:AbstractString})::Vector{FASTAMetadata}
+    read_count, read_length, gc_content = sample_fasta(paths[1])
+    [FASTAMetadata(path, filesize(path), read_count, read_length, gc_content) for path in paths]
+end
+
+export FASTAMetadata

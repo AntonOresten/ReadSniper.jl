@@ -1,24 +1,34 @@
 
 
-function create_kmer_vector(seq::LongDNA, k::Int)
+function create_kmer_vector(seq::LongDNA{4}, k::Int)
     k -= 1
-    [view(seq, i:i+k) for i in 1:length(seq)-k]
+    [seq[i:i+k] for i in 1:length(seq)-k]
 end
 
 export create_kmer_vector
 
 
-function kmer_index_dict(kmer_vector::Vector{LongSubSeq{DNAAlphabet{4}}}, rev_comp::Bool=true)
+function kmer_index_dict(
+    kmer_vector::Vector{LongDNA{4}},
+    rev_comp::Bool=true,
+)::Dict{LongDNA{4}, Vector{Int}}
+
     k = length(kmer_vector[1])
-    dict = Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int}}()
+    dict = Dict{LongDNA{4}, Vector{Int}}()
     for (index, kmer) in enumerate(kmer_vector)
-        push_or_add!(kmer, index, dict)
-        rev_comp ? push_or_add!(view(reverse_complement(kmer), 1:k), -index, dict) : nothing
+        push_or_create!(kmer, index, dict)
+        rev_comp ? push_or_create!(reverse_complement(kmer), -index, dict) : nothing
     end
+    sort!.(values(dict), rev=true)
     dict
 end
 
-function kmer_index_dict(seq::LongDNA{4}, k::Int, rev_comp::Bool=true)
+function kmer_index_dict(
+    seq::LongDNA{4},
+    k::Int,
+    rev_comp::Bool=true,
+)::Dict{LongDNA{4}, Vector{Int}}
+
     kmer_index_dict(create_kmer_vector(seq, k), rev_comp)
 end
 
@@ -29,7 +39,7 @@ const Int_vector_empty = Int[]
 
 function kmer_match_indices(
     seq::LongDNA{4},
-    kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int}},
+    kmer_dict::Dict{LongDNA{4}, Vector{Int}},
     k::Int,
     step::Int=1,
 )

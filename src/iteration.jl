@@ -2,45 +2,68 @@
 
 function parallel_scanning(
     config::Config,
-    datafiles_paths::Vector{<:AbstractString},
-    kmer_index_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int64}},
+    reference::Reference,
+    fasta_metadata_list::Vector{FASTAMetadata},
     match_frequency_dict::Dict{Int32, Int32},
+    show_progress::Bool=true,
 )
-    file_count = length(datafiles_paths)
-    read_count = file_count * count_fastq_records(datafiles_paths[1])
+    #false_vector = zeros(Bool, reference.length-config.k+1)
+    threshold = config.threshold
+
+    file_count = length(fasta_metadata_list)
+    read_count = sum([fasta_metadata.read_count for fasta_metadata in fasta_metadata_list])
     threads_utilized = min(config.nthreads, file_count)
 
-    reads_scanned = zeros(Int32, file_count)
-    bases_parsed = zeros(Int32, file_count)
+    reads_scanned = zeros(Int, file_count)
 
     read_result_sets = [Set{ReadResult}() for _ in 1:file_count]
 
-    progress_bar = ProgressBar(config, read_count, file_count, threads_utilized)
-    Threads.@threads for (i, datafile) in collect(enumerate(datafiles_paths))
+    show_progress ? progress_bar = ProgressBar(config, read_count, file_count, threads_utilized) : nothing
+    Threads.@threads for (i, fasta_metadata) in collect(enumerate(fasta_metadata_list))
         read_number::Int = 0
-        reader = FASTQ.Reader(open(datafile, "r"))
+        reader = FASTAReader(open(fasta_metadata.path, "r"); copy=false)
         while !eof(reader)
             record = first(reader)
-
             reads_scanned[i] = (read_number += 1)
-            bases_parsed[i] += FASTQ.seqsize(record)
 
-            read_result = scan_read(config, read_number, record, kmer_index_dict)
+            read_result = scan_read(config, read_number, record, reference.kmer_dict)
+
             increment_dict_value!(read_result.kmer_matches, match_frequency_dict)
 
-            if read_result.kmer_matches > config.threshold
+            if read_result.kmer_matches > threshold
                 push!(read_result_sets[i], read_result)
             end
 
-            if (i == 1) && iszero(read_number % 1729)
-                update(progress_bar, sum(reads_scanned), sum(bases_parsed), sum(bases_parsed)÷sum(reads_scanned))
+            if show_progress && (i == 1 || threads_utilized == 1) && iszero(read_number % 1729)
+                update(progress_bar, sum(reads_scanned), sum(length(reads) for reads in read_result_sets))
             end
         end
         close(reader)
     end
-    mean_read_length = sum(bases_parsed) ÷ sum(reads_scanned)
 
-    finish(progress_bar, sum(bases_parsed), mean_read_length)
+    show_progress ? finish(progress_bar, sum(length(reads) for reads in read_result_sets)) : nothing
 
-    return read_result_sets, mean_read_length
+    return read_result_sets
 end
+
+
+# scattered scanning
+
+
+function analyse_dataset(
+    config::Config,
+    reference::Reference,
+    fasta_metadata_list::Vector{FASTAMetadata},
+)
+    match_frequency_dict = Dict{Int32, Int32}()
+
+    read_result_sets = parallel_scanning(config, reference, fasta_metadata_list, match_frequency_dict)
+    read_result_SOA = sort!(StructArray(vcat([collect(rr_set) for rr_set in read_result_sets]...)), by=result->result.kmer_matches, rev=true)
+
+    sorted_match_bins = sort!(collect(match_frequency_dict), by=pair->pair[1])
+    matches, frequency = getindex.(sorted_match_bins, 1), getindex.(sorted_match_bins, 2)
+
+    return read_result_SOA, (matches=matches, frequency=frequency)
+end
+
+export analyse_dataset

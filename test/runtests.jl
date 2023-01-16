@@ -15,12 +15,17 @@ using BioSequences
 end
 
 
+@testset "probability.jl" begin
+    nothing
+end
+
+
 @testset "kmers.jl" begin
     @test create_kmer_vector(dna"ACGTACGT", 4) == [dna"ACGT", dna"CGTA", dna"GTAC", dna"TACG", dna"ACGT"]
 
     @testset "kmer index dictionaries" begin
-        @test kmer_index_dict(dna"ACGTACGT", 4, false) == Dict(dna"ACGT" => [1, 5], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
-        @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4, false), 4) == [[1, 5], [2]]
+        @test kmer_index_dict(dna"ACGTACGT", 4, false) == Dict(dna"ACGT" => [5, 1], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
+        @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4, false), 4) == [[5, 1], [2]]
     end
 end
 
@@ -31,18 +36,18 @@ end
 
 
 @testset "datasets.jl" begin
-    # fetch_query_data
-    # count_fastq_records
+    # reference
+    # fastqfile
     nothing
 end
 
 
-@testset "API.jl" begin
+if isdir("C:/Users/anton/RSData")
     snipe_reads(
-        "C:/Users/anton/RSData/reference/reference.fasta", 
-        "C:/Users/anton/RSData/datasets/fastq-files/SRR10873757",
-        ["SRR10873757_1.fastq", "SRR10873757_2.fastq"],
+        "C:/Users/anton/RSData/reference/reference.fasta",
+        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
+        "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
         output_dir="output",
-        k=8, step=2,
+        k=9, step=4,
     )
 end

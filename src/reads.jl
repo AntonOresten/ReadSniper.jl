@@ -8,47 +8,47 @@ struct ReadResult
 end
 
 
-function highest_score_subseq_in_window(vector::Vector{Int64}, window_size::Int64, score_function::Function=length)
-    len = length(vector)
-    current_end::Int64 = 0
-    best_start::Int64 = 0
-    best_end::Int64 = 0
-    best_score = 0
-    for current_start::Int64 in 1:len
-        while current_end+1 <= len && vector[current_end+1] - vector[current_start] < window_size
-            current_end += 1
-        end
-        current_score = score_function(vector[current_start:current_end])
-        if current_score > best_score
-            best_start = current_start
-            best_end = current_end
-            best_score = current_score
-        end
-    end
-    return best_score, best_start, best_end
-end
-
-export highest_score_subseq_in_window
-
-
 function scan_read(
     config::Config,
     read_number::Int,
-    record::FASTQ.Record,
-    query_kmer_dict::Dict{LongSubSeq{DNAAlphabet{4}}, Vector{Int64}},
+    record::FASTARecord,
+    kmer_dict::Dict{LongDNA{4}, Vector{Int64}},
+    #bool_match_vector::Vector{Bool},
 )
     read_length::Int = seqsize(record)
     read_sequence::LongDNA{4} = sequence(LongDNA{4}, record)
-    match_indices_vector::Vector{Vector{Int}} = kmer_match_indices(read_sequence, query_kmer_dict, config.k, config.step)
+    match_indices_vector::Vector{Vector{Int}} = kmer_match_indices(read_sequence, kmer_dict, config.k, config.step)
     
     if length(match_indices_vector) == 0
-        return ReadResult(Int32(read_number), zero(Int32), zero(Int32), zero(Int32))
+        return ReadResult(Int32(read_number), Int32(0), Int32(0), Int32(0))
     end
     
     sorted_match_indices::Vector{Int64} = sort(vcat(match_indices_vector...))
-    max_matches_in_range::Int64, range_start::Int64, range_end::Int64 = highest_score_subseq_in_window(sorted_match_indices, read_length, length)
+    score::Int64, range_start::Int64, range_end::Int64 = highest_score_subseq_in_window(sorted_match_indices, read_length, length)
     ref_range_start::Int64 = sorted_match_indices[range_start]
     ref_range_end::Int64 = sorted_match_indices[range_end]
 
-    ReadResult(Int32(read_number), Int32(ref_range_start), Int32(ref_range_end), Int32(config.step*max_matches_in_range))
+    ReadResult(Int32(read_number), Int32(ref_range_start), Int32(ref_range_end), Int32(config.step*score))
+
+    # for match_indices in match_indices_vector
+    #     for index in match_indices
+    #         bool_match_vector[abs(index)] = true
+    #     end
+    # end
+
+    # matched_windows = remove_overlapping_pairs(find_subarrays(bool_match_vector, read_length-config.k+1, config.threshold))
+    
+    # read_results::Vector{ReadResult} = []
+
+    # for (i, mw) in enumerate(matched_windows)
+    #     score = count(view(bool_match_vector, mw[1]:mw[2]))
+    #     push!(read_results, ReadResult(Int32(read_number), Int32(mw[1]), Int32(mw[2]), Int32(config.step*score)))
+    #     if i == 1
+    #         break
+    #     end
+    # end
+
+    # read_results
+    
+
 end
