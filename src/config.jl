@@ -5,3 +5,5 @@ struct Config
     threshold::Int
     nthreads::Int
 end
+
+export Config

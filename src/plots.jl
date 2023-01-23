@@ -1,57 +1,68 @@
 
 using Plots; gr()
+using Colors
 
+
+function init_score_distribution_plot(
+    xlim_upper::Integer = 250,
+)
+    plot(
+        yscale = :log10,
+        ylims = (1, Inf),
+        xlims = (0, xlim_upper+10),
+        tickfont = font(10, "Computer Modern"),
+        guidefont = font(12, "Computer Modern"),
+        minorgrid = true,
+        xlabel = "Read score",
+        ylabel = "Frequency",
+        yticks = 4,
+        fmt = :svg,
+    )
+end
 
 function score_distribution_plot(
     matches::Vector{<:Integer},
     frequency::Vector{<:Integer},
-    xlim_upper::Integer = 250,
-    step::Integer = 1,
+    k::Integer,
+    step::Integer,
     estimate::Union{Vector{<:AbstractFloat}, Nothing} = [],
-    outfile::AbstractString = "score_distribution.svg",
+    color1 = "#0088ff",
+    color2 = "#ff8800",
 )
-    N = length(matches)
-    
-    plot(matches, (frequency .+ (step-1)) .÷ step,
-        color = "#0088ff",
+    name = "k$(k)s$(step)"
+
+    plot!(matches, (frequency .+ (step-1)) .÷ step,
+        color = color1,
         fillalpha = 0.5,
         fillrange = 1,
-        yscale = :log10,
-        ylims = (1, Inf),
-        xlims = (0, xlim_upper+10),
-        #xwiden = 1.01,
-        tickfont = font(10, "Computer Modern"),
-        guidefont = font(12, "Computer Modern"),
-        minorgrid = true,
-        xlabel = "Score",
-        ylabel = "Frequency",
-        label = "Result",
-        yticks = 8,
-        fmt = :svg,
+        label = "Result ($name)",
     )
 
     if estimate !== nothing
         plot!(
-            map(x->(x < 1) ? 1 : x, estimate),
-            color = "#ff8800",
+            map(x->max(1, x), estimate),
+            color = color2,
             fillalpha = 0.5,
             fillrange = 1,
-            label = "Estimate"
+            label = "Estimate ($name)"
         )
     end
-
-    savefig(outfile)
 end
 
 function score_distribution_plot(
     file::AbstractString,
-    xlim_upper::Integer = 250,
+    k::Integer,
     step::Integer = 1,
+    xlim_upper::Integer = 250,
     estimate::Union{Vector{<:AbstractFloat}, Nothing} = [],
     outfile::AbstractString = "score_distribution.svg",
 )
+    init_score_distribution_plot(xlim_upper)
+
     match_frequencies = CSV.read(file, NamedTuple)
-    score_distribution_plot(match_frequencies.matches, match_frequencies.frequency, xlim_upper, step, estimate, outfile)
+    score_distribution_plot(match_frequencies.matches, match_frequencies.frequency, k, step, estimate)
+
+    savefig(outfile)
 end
 
 export score_distribution_plot
@@ -59,7 +70,7 @@ export score_distribution_plot
 
 function generate_activity_vectors(read_result_fields, ref_length::Integer, k::Integer, thresholds::Vector{Int64}=[60, 100, 140])
 
-    matches::Vector{Int32} = read_result_fields.kmer_matches
+    matches::Vector{Int32} = read_result_fields.score
     range_start::Vector{Int32} = read_result_fields.ref_range_start
     range_end::Vector{Int32} = read_result_fields.ref_range_end
 
@@ -93,14 +104,14 @@ function activity_plot(
     log_scale::Bool=false,
 )
     N = length(activity_vectors)
-    colors = range(colorant"darkmagenta", colorant"plum", length=N) #[:red, :orange, :yellow, :lime, :deepskyblue, :blue, :violet, :magenta]
+    colors = range(colorant"plum", colorant"darkmagenta", length=N)
 
     max_activity = maximum(maximum.(activity_vectors))
     
     plot(
         tickfont = font(10, "Computer Modern"),
         guidefont = font(12, "Computer Modern"),
-        xlabel = "Position in Reference",
+        xlabel = "Position in reference",
         ylabel = "Match activity",
         yscale = log_scale ? :log10 : :identity,
         ylims = log_scale ? (1, max_activity) : (0, max_activity),
@@ -111,7 +122,7 @@ function activity_plot(
     for (i, vec) in enumerate(activity_vectors)
         plot!(
             color = colors[i],
-            map(x->(x < 1) ? 1 : x, vec),
+            map(x->max(1, x), vec),
             fillalpha = 1,
             fillrange = log_scale ? 1 : 0,
             yscale = log_scale ? :log10 : :identity,

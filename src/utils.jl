@@ -1,24 +1,23 @@
 
 
-function find_subarrays(arr::Vector{Bool}, L::Int, T::Int)
-    subarrays::Vector{Tuple{Int,Int}} = []
-    n = length(arr)
+function find_subarrays(arr::Array{Bool,1}, L::Int, T::Int)
+    subarrays::Vector{Tuple{Int,Int,Int}} = []
+    N = length(arr)
+    if N == 0 return subarrays end
     true_count = sum(arr[1:min(L, end)])
-    for i in L+1:n
-        true_count += arr[i] - arr[i-L]
+    for i in 2:N-L+1
+        true_count += arr[i+L-1] - arr[i-1]
         if true_count >= T
-            push!(subarrays, (i-L+1,i))
+            push!(subarrays, (i, i+L-1, true_count))
         end
     end
     return subarrays
 end
 
-export find_subarrays
 
-
-function remove_overlapping_pairs(pairs::Vector{Tuple{Int,Int}})
-    filtered_pairs::Vector{Tuple{Int,Int}} = []
+function remove_overlapping_pairs(pairs::Vector{Tuple{Int,Int,Int}})
     N = length(pairs)
+    filtered_pairs::Vector{Tuple{Int,Int,Int}} = []
     if N == 0 return filtered_pairs end
     pairs = sort(pairs, by=x -> x[1])
     current_pair = pairs[1]
@@ -28,7 +27,7 @@ function remove_overlapping_pairs(pairs::Vector{Tuple{Int,Int}})
             push!(filtered_pairs, current_pair)
             current_pair = next_pair
         else
-            if next_pair[2]-next_pair[1] > current_pair[2]-current_pair[1]
+            if next_pair[3] > current_pair[3]#next_pair[2]-next_pair[1] > current_pair[2]-current_pair[1]
                 current_pair = next_pair
             end
         end
@@ -37,9 +36,10 @@ function remove_overlapping_pairs(pairs::Vector{Tuple{Int,Int}})
     return filtered_pairs
 end
 
-export remove_overlapping_pairs
 
-
+"""
+Longest increasing subsequence
+"""
 function lis(vector::Vector{<:Integer})
     n = length(vector)
     lis_values = zeros(Int64, n)
@@ -56,7 +56,49 @@ end
 export lis
 
 
-function highest_score_subseq_in_window(vector::Vector{Int64}, window_size::Int64, score_function::Function=length)
+"""
+Longest increasing subsequence elements
+"""
+function LISE(arr::Array{Int,1})
+    n = length(arr)
+    dp = fill(1, n)
+    parents = fill(-1,n)
+    max_len, max_end = 0, -1
+    for i in 1:n
+        for j in 1:i
+            if arr[i] > arr[j]
+                if dp[j] + 1 > dp[i]
+                    dp[i] = dp[j] + 1
+                    parents[i] = j
+                    if dp[i] > max_len
+                        max_len = dp[i]
+                        max_end = i
+                    end
+                end
+            end
+        end
+    end
+    start_index = max_end
+    while parents[start_index] != -1
+        start_index = parents[start_index]
+    end
+    result = zeros(Int, max_len)
+    current_index = max_end
+    for i in max_len:-1:1
+        result[i] = arr[current_index]
+        current_index = parents[current_index]
+    end
+    return result
+end
+
+export LISE
+
+
+"""
+Finds the subsequence with the highest score (based on score_function),
+whose first and last elements have at most a difference of window_size
+"""
+function max_subseq_in_range(vector::Vector{Int64}, window_size::Int64, score_function::Function=length)
     len = length(vector)
     current_end::Int64 = 0
     best_start::Int64 = 0
@@ -66,7 +108,7 @@ function highest_score_subseq_in_window(vector::Vector{Int64}, window_size::Int6
         while current_end+1 <= len && vector[current_end+1] - vector[current_start] < window_size
             current_end += 1
         end
-        current_score = score_function(vector[current_start:current_end])
+        current_score = current_end - current_start + 1 #score_function(vector[current_start:current_end])
         if current_score > best_score
             best_start = current_start
             best_end = current_end
@@ -76,7 +118,7 @@ function highest_score_subseq_in_window(vector::Vector{Int64}, window_size::Int6
     return best_score, best_start, best_end
 end
 
-export highest_score_subseq_in_window
+export max_subseq_in_range
 
 
 
@@ -133,5 +175,3 @@ function first_true_after_false(func::Function, vector::Vector{<:Number})
         return find_nth_true_region(1, func, vector)
     end
 end
-
-ge(t::Real, vector::Vector{<:Real}) = map(x->x>=t, vector)

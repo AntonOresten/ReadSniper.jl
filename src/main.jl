@@ -2,79 +2,86 @@
 
 function snipe_reads(
     reference_file_path::AbstractString,
-    fasta_files::Vector{<:AbstractString},
-    fasta_files_dir::AbstractString = "";
+    datafiles::Vector{<:AbstractString};
+    datafile_dir::AbstractString = "",
     output_dir::AbstractString = "",
     k::Int64 = 7,
     step::Int64 = 1,
+    show_progress::Bool = true,
+    save_files::Bool = true,
+    create_plots::Bool = true,
 )
 
     reference = Reference(reference_file_path, k)
+    showinfo(reference)
 
-    @info """Reference sequence
-        length: $(reference.length)nt,
-        unique k-mers: $(reference.unique_kmer_count)
-        GC-content: $(round(100*reference.gc_content, digits=2))%
-     """
-
-    fasta_file_paths = fasta_files_dir * "/" .* fasta_files
-    fasta_metadata_list = FASTAMetadata(fasta_file_paths)
+    datafile_paths = joinpath.(datafile_dir, datafiles)
+    datafile_list = DatafileMetadata(datafile_paths)
     
-    for (i, fqm) in enumerate(fasta_metadata_list)
-        @info """Dataset file $i: $(fqm.path)
-            size: $(round(fqm.file_size/1e9, digits=3)) GB
-            reads: $(fqm.read_count)
-            read length: $(fqm.read_length)
-            GC-content: $(round(100*fqm.gc_content, digits=2))%
-         """
+    for (i, datafile) in enumerate(datafile_list)
+        showinfo(i, datafile)
     end
 
-    # calculate threshold
-    estimated_score_distribution = spurious_score_distribution(k, reference, fasta_metadata_list)
-    threshold = Int(first_true_after_false(x->x<1, estimated_score_distribution))
+    # calculate read score threshold for filtering 
+    estimated_score_distribution = spurious_score_distribution(k, reference, datafile_list)
+    threshold = max(
+        first_true_after_false(x->x<1, estimated_score_distribution),
+        findfirst(==(maximum(estimated_score_distribution)), estimated_score_distribution)
+    )
 
+    # set up a config that includes run parameters
     nthreads = Threads.nthreads()
     config = Config(k, step, threshold, nthreads)
     @info "Config" k step threshold nthreads
+    
+    suffix = "k$(k)s$(step)"
+    score_distr_filename = joinpath(output_dir, "score_distr-$suffix")
+    activity_filename = joinpath(output_dir, "activity-$suffix")
 
-    if true === true
-        println()
-        reads_SOA, match_frequencies = analyse_dataset(config, reference, fasta_metadata_list)
-        println()
+    println()
+    reads_SOA, match_frequencies = analyse_dataset(config, reference, datafile_list, show_progress)
+    println()
 
+    if save_files
         @info "Saving files to '$(output_dir)'..."
-        if isdir(output_dir) mkpath(output_dir) end
 
-        suffix = "k$(k)s$(step)"
+        if output_dir != ""
+            mkpath(output_dir)
+            @assert ispath(output_dir)
+        end
 
-        CSV.write("$output_dir/reads-$suffix.csv", reads_SOA)
-        CSV.write("$output_dir/score_distr-$suffix.csv", match_frequencies)
-    else
-        suffix = "k$(k)s$(step)"
-        reads_SOA = CSV.read("$output_dir/reads-$suffix.csv", NamedTuple)
-        match_frequencies = CSV.read("$output_dir/score_distr-$suffix.csv", NamedTuple)
+        CSV.write(joinpath(output_dir, "reads-$suffix.csv"), reads_SOA)
+        CSV.write(score_distr_filename*".csv", match_frequencies)
+    end
+    
+    # reads_SOA = CSV.read("$output_dir/reads-$suffix.csv", NamedTuple)
+    # match_frequencies = CSV.read("$output_dir/score_distr-$suffix.csv", NamedTuple)
+
+    if create_plots
+        @info "Saving plots to '$(output_dir)'..."
+
+        score_distribution_plot(
+            score_distr_filename*".csv",
+            k,
+            step,
+            datafile_list[1].read_length,
+            estimated_score_distribution,
+            score_distr_filename*".svg",
+        )
+
+        T = 8
+        thresholds = [threshold + 5*binomial(t, 2) for t in 1:T]
+        activity_plot(
+            reads_SOA,
+            reference.length,
+            config.k,
+            thresholds,
+            activity_filename*".svg",
+            true,
+        )
     end
 
-    @info "Saving plots to '$(output_dir)'..."
-
-    score_distribution_plot(
-        "$output_dir/score_distr-$suffix.csv",
-        fasta_metadata_list[1].read_length,
-        step,
-        estimated_score_distribution,
-        "$output_dir/score_distr-$suffix.svg"
-    )
-
-    T = 7
-    thresholds = [threshold + 5*binomial(t, 2) for t in 1:T]
-    activity_plot(
-        reads_SOA,
-        reference.length,
-        config.k,
-        thresholds,
-        "$output_dir/activity-$suffix.svg",
-        true,
-    )
+    return reads_SOA
 end
 
 

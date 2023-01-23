@@ -7,6 +7,7 @@ module ReadSniper
     using ProgressMeter
 
     include("utils.jl")
+    include("randutils.jl")
     include("config.jl")
     include("kmers.jl")
     include("reads.jl")
@@ -18,5 +19,3 @@ module ReadSniper
     include("main.jl")
 
 end
-
-# write all read scores to a file maybe - 16 bits per score, and then enumerate when reading to get read num

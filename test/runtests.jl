@@ -2,7 +2,7 @@
 using ReadSniper
 using Test
 
-using BioSequences
+using BioSequences, FASTX
 
 
 @testset "utils.jl" begin
@@ -15,39 +15,95 @@ using BioSequences
 end
 
 
-@testset "probability.jl" begin
-    nothing
+@testset "randutils.jl" begin
+    @test gc_content(random_dna(10000, 0.1)) < 0.2
+    @test gc_content(random_dna(10000, 0.9)) > 0.8
 end
 
 
 @testset "kmers.jl" begin
     @test create_kmer_vector(dna"ACGTACGT", 4) == [dna"ACGT", dna"CGTA", dna"GTAC", dna"TACG", dna"ACGT"]
 
-    @testset "kmer index dictionaries" begin
-        @test kmer_index_dict(dna"ACGTACGT", 4, false) == Dict(dna"ACGT" => [5, 1], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
-        @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4, false), 4) == [[5, 1], [2]]
-    end
+    @test kmer_index_dict(dna"ACGTACGT", 4, false) == Dict(dna"ACGT" => [5, 1], dna"CGTA" => [2], dna"GTAC" => [3], dna"TACG" => [4])
+    @test kmer_match_indices(dna"ACGTTCGTA", kmer_index_dict(dna"ACGTACGT", 4, false), 4) == [[5, 1], Int64[], Int64[], Int64[], Int64[], [2]]
 end
 
 
 @testset "reads.jl" begin
-    @test highest_score_subseq_in_window([1,6,7,8,9,10,11,12,13,17], 8, length) == (8, 2, 9)
+    @test max_subseq_in_range([1,6,7,8,9,10,11,12,13,17], 8, length) == (8, 2, 9)
+
+    @testset begin
+        config = Config(7, 1, 20, 1)
+
+        reader = FASTAReader(open("SRR123.fasta", "r"))
+        record1 = first(reader)
+        record2 = first(reader)
+        record3 = first(reader)
+        close(reader)
+
+        reader = FASTAReader(open("test_reference.fasta", "r"))
+        kmer_dict = kmer_index_dict(sequence(LongDNA{4}, first(reader)), config.k, true)
+        close(reader)
+
+        # Test whether the returned scores show a correlation or not
+        @test scan_read(config, record1, kmer_dict)[3] > config.threshold
+        @test scan_read(config, record2, kmer_dict)[3] > config.threshold
+        @test scan_read(config, record3, kmer_dict)[3] < config.threshold
+    end
 end
 
 
 @testset "datasets.jl" begin
-    # reference
-    # fastqfile
-    nothing
+    @testset "Reference" begin
+        k = 7
+        reference = Reference("test_reference.fasta", k)
+        @test round(reference.gc_content, digits=2) == 0.31
+        @test reference.length == 9369
+        @test reference.unique_kmer_count <= 2 * (9369 - k + 1)
+    end
+
+    @testset "DatafileMetadata" begin
+        datafile = DatafileMetadata("SRR123.fasta")
+        #@test datafile.file_size
+        @test datafile.read_count == 3
+        @test datafile.read_length == 100
+        #@test datafile.gc_content
+    end
 end
 
 
-if isdir("C:/Users/anton/RSData")
+@testset "probability.jl" begin
+    @test sum(P_ACGT(0.5)) == 1 
+end
+
+
+@testset "iteration.jl" begin
+    
+end
+
+
+@testset "plots.jl" begin
+    
+end
+
+
+@testset "main.jl" begin
     snipe_reads(
-        "C:/Users/anton/RSData/reference/reference.fasta",
-        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
-        "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
-        output_dir="output",
-        k=9, step=4,
+        "test_reference.fasta",
+        ["SRR123.fasta"],
+        k = 6,
+        step = 1,
     )
 end
+
+
+# if isdir("C:/Users/anton/RSData")
+#     snipe_reads(
+#         "C:/Users/anton/RSData/reference/reference.fasta",
+#         ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
+#         datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
+#         output_dir = "output",
+#         k = 9,
+#         step = 4,
+#     )
+# end
