@@ -16,7 +16,11 @@ function init_score_distribution_plot(
         xlabel = "Read score",
         ylabel = "Frequency",
         yticks = 4,
+        yminorgrid = true,
+        legendfont = font(10, "Computer Modern"),
+        legend_position = :topright, 
         fmt = :svg,
+        margins = 0.5Plots.cm,
     )
 end
 
@@ -25,14 +29,18 @@ function score_distribution_plot(
     frequency::Vector{<:Integer},
     k::Integer,
     step::Integer,
+    xlim_upper::Integer = 250,
     estimate::Union{Vector{<:AbstractFloat}, Nothing} = [],
-    color1 = "#0088ff",
-    color2 = "#ff8800",
+    outfile::AbstractString = "score_distribution.svg";
+    result_color = "#0088ff",
+    estimate_color = "#ff8800",
 )
     name = "k$(k)s$(step)"
 
+    init_score_distribution_plot(xlim_upper)
+
     plot!(matches, (frequency .+ (step-1)) .÷ step,
-        color = color1,
+        color = result_color,
         fillalpha = 0.5,
         fillrange = 1,
         label = "Result ($name)",
@@ -41,12 +49,14 @@ function score_distribution_plot(
     if estimate !== nothing
         plot!(
             map(x->max(1, x), estimate),
-            color = color2,
+            color = estimate_color,
             fillalpha = 0.5,
             fillrange = 1,
             label = "Estimate ($name)"
         )
     end
+
+    savefig(outfile)
 end
 
 function score_distribution_plot(
@@ -57,12 +67,16 @@ function score_distribution_plot(
     estimate::Union{Vector{<:AbstractFloat}, Nothing} = [],
     outfile::AbstractString = "score_distribution.svg",
 )
-    init_score_distribution_plot(xlim_upper)
-
     match_frequencies = CSV.read(file, NamedTuple)
-    score_distribution_plot(match_frequencies.matches, match_frequencies.frequency, k, step, estimate)
-
-    savefig(outfile)
+    score_distribution_plot(
+        match_frequencies.matches,
+        match_frequencies.frequency,
+        k,
+        step,
+        xlim_upper,
+        estimate,
+        outfile,
+    )
 end
 
 export score_distribution_plot
@@ -116,8 +130,13 @@ function activity_plot(
         yscale = log_scale ? :log10 : :identity,
         ylims = log_scale ? (1, max_activity) : (0, max_activity),
         yticks = 3,
+        yminorgrid = true,
+        legendfont = font(10, "Computer Modern"),
         fmt = :svg,
-        legend  = :outertopright
+        legend  = :outertopright,
+        margins = 0.5Plots.cm,
+        xformatter = :plain,
+        xticks = 5,
     )
     for (i, vec) in enumerate(activity_vectors)
         plot!(
@@ -126,7 +145,7 @@ function activity_plot(
             fillalpha = 1,
             fillrange = log_scale ? 1 : 0,
             yscale = log_scale ? :log10 : :identity,
-            label = ">$(thresholds[i]) score",
+            label = "$(thresholds[i])",
         )
     end
     savefig(outfile)

@@ -124,12 +124,13 @@ export max_subseq_in_range
 
 function increment_dict_value!(
     key,
-    dict::Dict
+    delta,
+    dict::Dict,
 )
     if haskey(dict, key)
-        dict[key] += 1
+        dict[key] += delta
     else
-        dict[key] = 1
+        dict[key] = delta
     end
 end
 

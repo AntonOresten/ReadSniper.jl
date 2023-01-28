@@ -5,10 +5,11 @@ function snipe_reads(
     datafiles::Vector{<:AbstractString};
     datafile_dir::AbstractString = "",
     output_dir::AbstractString = "",
-    k::Int64 = 7,
-    step::Int64 = 1,
+    k::Int = 7,
+    step::Int = 1,
+    t_adjustment::Int = 0,
     show_progress::Bool = true,
-    save_files::Bool = true,
+    save_data::Bool = true,
     create_plots::Bool = true,
 )
 
@@ -27,7 +28,7 @@ function snipe_reads(
     threshold = max(
         first_true_after_false(x->x<1, estimated_score_distribution),
         findfirst(==(maximum(estimated_score_distribution)), estimated_score_distribution)
-    )
+    ) + t_adjustment
 
     # set up a config that includes run parameters
     nthreads = Threads.nthreads()
@@ -42,7 +43,9 @@ function snipe_reads(
     reads_SOA, match_frequencies = analyse_dataset(config, reference, datafile_list, show_progress)
     println()
 
-    if save_files
+    GC.gc()
+
+    if save_data
         @info "Saving files to '$(output_dir)'..."
 
         if output_dir != ""
@@ -61,7 +64,8 @@ function snipe_reads(
         @info "Saving plots to '$(output_dir)'..."
 
         score_distribution_plot(
-            score_distr_filename*".csv",
+            match_frequencies.matches,
+            match_frequencies.frequency,
             k,
             step,
             datafile_list[1].read_length,
@@ -71,6 +75,10 @@ function snipe_reads(
 
         T = 8
         thresholds = [threshold + 5*binomial(t, 2) for t in 1:T]
+        upper_threshold = datafile_list[1].read_length-config.k+1
+        thresholds = thresholds[thresholds .< upper_threshold]
+        push!(thresholds, upper_threshold)
+        
         activity_plot(
             reads_SOA,
             reference.length,

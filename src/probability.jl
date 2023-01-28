@@ -40,4 +40,4 @@ end
 
 #println(findfirst(map(x->x[2]<0&&x[1]>15,enumerate(log10.(spurious_match_distribution(8, 9360, 246, 2575656))))))
 
-export P_ACGT
+export P_ACGT, P_kmer_match

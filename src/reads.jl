@@ -27,7 +27,22 @@ function scan_read(
     ref_range_start::Int64 = match_indices[range_start]
     ref_range_end::Int64 = match_indices[range_end]
 
-    return (ref_range_start, ref_range_end, config.step*score)
+    if ref_range_start == -769 && ref_range_end == -545
+        scatter(
+            match_indices,
+            1:length(match_indices),
+            tickfont = font(10, "Computer Modern"),
+            guidefont = font(12, "Computer Modern"),
+            xlabel="Position in reference",
+            formatter=:plain,
+            legend = false,
+            fmt = :svg,
+            margins = 0.4Plots.cm,
+        )
+        savefig("read.svg")
+    end
+
+    return (ref_range_start * !(ref_range_start < 0 < ref_range_end), ref_range_end, config.step*score)
 end
 
 export scan_read

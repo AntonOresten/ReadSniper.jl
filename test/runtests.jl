@@ -10,7 +10,7 @@ using BioSequences, FASTX
     @test lis([20,1,7,14,4,5,5,6,15]) == 5
     
     dict = Dict(1 => 1, 2 => 1)
-    increment_dict_value!(1, dict)
+    increment_dict_value!(1, 1, dict)
     @test dict == Dict(1 => 2, 2 => 1)
 end
 
@@ -93,17 +93,21 @@ end
         ["SRR123.fasta"],
         k = 6,
         step = 1,
+        save_data = false,
+        create_plots = false,
     )
 end
 
 
-# if isdir("C:/Users/anton/RSData")
-#     snipe_reads(
-#         "C:/Users/anton/RSData/reference/reference.fasta",
-#         ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
-#         datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
-#         output_dir = "output",
-#         k = 9,
-#         step = 4,
-#     )
-# end
+if isdir("C:/Users/anton/RSData")
+    snipe_reads(
+        "C:/Users/anton/RSData/reference/dummy.fasta",
+        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
+        datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
+        output_dir = "output",
+        k = 9,
+        step = 4,
+        save_data = false,
+        #create_plots = false,
+    )
+end
