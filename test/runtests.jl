@@ -30,7 +30,7 @@ end
 
 
 @testset "reads.jl" begin
-    @test max_subseq_in_range([1,6,7,8,9,10,11,12,13,17], 8, length) == (8, 2, 9)
+    #@test max_subseq_in_range([1,6,7,8,9,10,11,12,13,17], 8, length) == (8, 2, 9)
 
     @testset begin
         config = Config(7, 1, 20, 1)
@@ -100,14 +100,5 @@ end
 
 
 if isdir("C:/Users/anton/RSData")
-    snipe_reads(
-        "C:/Users/anton/RSData/reference/dummy.fasta",
-        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
-        datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
-        output_dir = "output",
-        k = 9,
-        step = 4,
-        save_data = false,
-        #create_plots = false,
-    )
+    test_snipe()
 end

@@ -22,12 +22,12 @@ function scan_read(
         return (0, 0, 0)
     end
 
-    sort!(match_indices)
-    score::Int64, range_start::Int64, range_end::Int64 = max_subseq_in_range(match_indices, read_length)
-    ref_range_start::Int64 = match_indices[range_start]
-    ref_range_end::Int64 = match_indices[range_end]
+    lise = LISE(match_indices)
+    score::Int64, range_start::Int64, range_end::Int64 = max_subseq_in_range(lise, read_length)
+    ref_range_start::Int64 = range_start == 0 ? 0 : lise[range_start]
+    ref_range_end::Int64 = range_end == 0 ? 0 : lise[range_end]
 
-    if ref_range_start == -769 && ref_range_end == -545
+    #=if ref_range_start == -769 && ref_range_end == -545
         scatter(
             match_indices,
             1:length(match_indices),
@@ -40,7 +40,7 @@ function scan_read(
             margins = 0.4Plots.cm,
         )
         savefig("read.svg")
-    end
+    end=#
 
     return (ref_range_start * !(ref_range_start < 0 < ref_range_end), ref_range_end, config.step*score)
 end

@@ -62,7 +62,7 @@ Longest increasing subsequence elements
 function LISE(arr::Array{Int,1})
     n = length(arr)
     dp = fill(1, n)
-    parents = fill(-1,n)
+    parents = fill(-1, n)
     max_len, max_end = 0, -1
     for i in 1:n
         for j in 1:i
@@ -79,7 +79,7 @@ function LISE(arr::Array{Int,1})
         end
     end
     start_index = max_end
-    while parents[start_index] != -1
+    while start_index > 0 && parents[start_index] != -1
         start_index = parents[start_index]
     end
     result = zeros(Int, max_len)
@@ -94,11 +94,25 @@ end
 export LISE
 
 
+function nunique(a::SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true})
+    last = first(a)
+    n = 1
+    for x in a
+        if isless(last, x)
+            n += 1
+            last = x
+        end
+    end
+    n
+end
+
+export nunique
+
 """
 Finds the subsequence with the highest score (based on score_function),
 whose first and last elements have at most a difference of window_size
 """
-function max_subseq_in_range(vector::Vector{Int64}, window_size::Int64, score_function::Function=length)
+function max_subseq_in_range(vector::Vector{Int64}, window_size::Int64, score_function::Function=nunique)
     len = length(vector)
     current_end::Int64 = 0
     best_start::Int64 = 0
@@ -108,7 +122,7 @@ function max_subseq_in_range(vector::Vector{Int64}, window_size::Int64, score_fu
         while current_end+1 <= len && vector[current_end+1] - vector[current_start] < window_size
             current_end += 1
         end
-        current_score = current_end - current_start + 1 #score_function(vector[current_start:current_end])
+        current_score = score_function(view(vector, current_start:current_end))
         if current_score > best_score
             best_start = current_start
             best_end = current_end

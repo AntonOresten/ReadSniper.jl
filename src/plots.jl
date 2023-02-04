@@ -15,12 +15,12 @@ function init_score_distribution_plot(
         minorgrid = true,
         xlabel = "Read score",
         ylabel = "Frequency",
-        yticks = 4,
+        yticks = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5],
         yminorgrid = true,
         legendfont = font(10, "Computer Modern"),
         legend_position = :topright, 
         fmt = :svg,
-        margins = 0.5Plots.cm,
+        #margins = 0.5Plots.cm,
     )
 end
 
@@ -43,7 +43,7 @@ function score_distribution_plot(
         color = result_color,
         fillalpha = 0.5,
         fillrange = 1,
-        label = "Result ($name)",
+        label = "Empirical ($name)",
     )
 
     if estimate !== nothing
@@ -52,7 +52,7 @@ function score_distribution_plot(
             color = estimate_color,
             fillalpha = 0.5,
             fillrange = 1,
-            label = "Estimate ($name)"
+            label = "Expected ($name)"
         )
     end
 

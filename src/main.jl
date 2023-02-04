@@ -92,5 +92,20 @@ function snipe_reads(
     return reads_SOA
 end
 
-
 export snipe_reads
+
+
+function test_snipe()
+    snipe_reads(
+        "C:/Users/anton/RSData/reference/dummy.fasta",
+        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
+        datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
+        output_dir = "output",
+        k = 8,
+        step = 3,
+        save_data = true,
+        create_plots = true,
+    )
+end
+
+export test_snipe
