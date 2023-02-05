@@ -47,8 +47,9 @@ function score_distribution_plot(
     )
 
     if estimate !== nothing
+        values = map(x->max(1, x), estimate)
         plot!(
-            map(x->max(1, x), estimate),
+            filter(p -> p[2] > 1, collect(enumerate(values))),
             color = estimate_color,
             fillalpha = 0.5,
             fillrange = 1,
@@ -119,31 +120,30 @@ function activity_plot(
 )
     N = length(activity_vectors)
     colors = range(colorant"plum", colorant"darkmagenta", length=N)
-
-    max_activity = maximum(maximum.(activity_vectors))
     
+    log_mode_min = 0.8
     plot(
         tickfont = font(10, "Computer Modern"),
         guidefont = font(12, "Computer Modern"),
         xlabel = "Position in reference",
         ylabel = "Match activity",
         yscale = log_scale ? :log10 : :identity,
-        ylims = log_scale ? (1, max_activity) : (0, max_activity),
+        ylims = log_scale ? (log_mode_min, Inf) : (0, Inf),
         yticks = 3,
         yminorgrid = true,
         legendfont = font(10, "Computer Modern"),
         fmt = :svg,
         legend  = :outertopright,
-        margins = 0.5Plots.cm,
         xformatter = :plain,
         xticks = 5,
     )
     for (i, vec) in enumerate(activity_vectors)
+        values = map(x->max(0.1, x), vec)
         plot!(
+            values,
             color = colors[i],
-            map(x->max(1, x), vec),
             fillalpha = 1,
-            fillrange = log_scale ? 1 : 0,
+            fillrange = log_scale ? log_mode_min : 0,
             yscale = log_scale ? :log10 : :identity,
             label = "$(thresholds[i])",
         )

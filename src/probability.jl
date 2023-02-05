@@ -30,13 +30,16 @@ function spurious_score_distribution(
     read_length = datafile_list[1].read_length
 
     # The important thing here is to have an approximation of a random score distribution that scales correctly with k and read length.
-    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)/7)^reference.unique_kmer_count
+    z = 3
+    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)/sqrt(read_length)*((k-z)/(8-z)))^reference.unique_kmer_count
     #total_read_count * binomial_probability.(read_length, 0:read_length, p)
 
     #p = 1 - (1 - (1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*(read_length-k+1)/(reference.length - k + 1))^(2*(reference.length - k + 1)/reference.unique_kmer_count)))^(reference.unique_kmer_count)
     # * 2 * (reference.length - k + 1) ÷ reference.unique_kmer_count
     total_read_count * binomial_probability.(read_length, 0:read_length, p)
 end
+
+export spurious_score_distribution
 
 #println(findfirst(map(x->x[2]<0&&x[1]>15,enumerate(log10.(spurious_match_distribution(8, 9360, 246, 2575656))))))
 

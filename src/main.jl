@@ -34,34 +34,30 @@ function snipe_reads(
     nthreads = Threads.nthreads()
     config = Config(k, step, threshold, nthreads)
     @info "Config" k step threshold nthreads
-    
-    suffix = "k$(k)s$(step)"
-    score_distr_filename = joinpath(output_dir, "score_distr-$suffix")
-    activity_filename = joinpath(output_dir, "activity-$suffix")
 
     println()
     reads_SOA, match_frequencies = analyse_dataset(config, reference, datafile_list, show_progress)
     println()
-
-    GC.gc()
+    
+    suffix = "k$(k)s$(step)"
+    output_folder = joinpath(output_dir, replace(splitext("$(suffix)-$(now())")[1], ":" => ""))
 
     if save_data
-        @info "Saving files to '$(output_dir)'..."
+        @info "Saving files to '$(output_folder)'..."
 
-        if output_dir != ""
-            mkpath(output_dir)
-            @assert ispath(output_dir)
-        end
+        if !ispath(output_folder) mkpath(output_folder) end
 
-        CSV.write(joinpath(output_dir, "reads-$suffix.csv"), reads_SOA)
-        CSV.write(score_distr_filename*".csv", match_frequencies)
+        CSV.write(joinpath(output_folder, "reads.csv"), reads_SOA)
+        CSV.write(joinpath(output_folder, "match_activity.csv"), match_frequencies)
     end
     
-    # reads_SOA = CSV.read("$output_dir/reads-$suffix.csv", NamedTuple)
-    # match_frequencies = CSV.read("$output_dir/score_distr-$suffix.csv", NamedTuple)
+    # reads_SOA = CSV.read("$output_folder/reads-$suffix.csv", NamedTuple)
+    # match_frequencies = CSV.read("$output_folder/score_distr-$suffix.csv", NamedTuple)
 
     if create_plots
-        @info "Saving plots to '$(output_dir)'..."
+        @info "Saving plots to '$(output_folder)'..."
+        
+        if !ispath(output_folder) mkpath(output_folder) end
 
         score_distribution_plot(
             match_frequencies.matches,
@@ -70,7 +66,7 @@ function snipe_reads(
             step,
             datafile_list[1].read_length,
             estimated_score_distribution,
-            score_distr_filename*".svg",
+            joinpath(output_folder, "score_distribution.svg"),
         )
 
         T = 8
@@ -84,7 +80,7 @@ function snipe_reads(
             reference.length,
             config.k,
             thresholds,
-            activity_filename*".svg",
+            joinpath(output_folder, "match_activity.svg"),
             true,
         )
     end

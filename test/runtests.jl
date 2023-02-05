@@ -46,9 +46,9 @@ end
         close(reader)
 
         # Test whether the returned scores show a correlation or not
-        @test scan_read(config, record1, kmer_dict)[3] > config.threshold
-        @test scan_read(config, record2, kmer_dict)[3] > config.threshold
-        @test scan_read(config, record3, kmer_dict)[3] < config.threshold
+        @test scan_read(config, record1, kmer_dict)[1] > config.threshold
+        @test scan_read(config, record2, kmer_dict)[1] > config.threshold
+        @test scan_read(config, record3, kmer_dict)[1] < config.threshold
     end
 end
 
@@ -98,7 +98,3 @@ end
     )
 end
 
-
-if isdir("C:/Users/anton/RSData")
-    test_snipe()
-end
