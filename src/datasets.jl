@@ -38,7 +38,7 @@ end
 export Reference
 
 function showinfo(reference::Reference)
-    @info """Reference sequence
+    @info """Reference: $(reference.path)
         length: $(reference.length)nt,
         unique k-mers: $(reference.unique_kmer_count)
         GC-content: $(round(100*reference.gc_content, digits=2))%
@@ -50,26 +50,29 @@ end
 Assumes that the first N reads are representative of the whole Datafile, both in terms of read length and GC content.
 Sample size can be set to Inf, such that all read lengths and GC contents get counted.
 """
-function sample_fasta(path::AbstractString, sample_size::Number=1000)
-    read_count::Int = 0
-    read_length_sum::Int = 0
-    gc_content_sum::Float64 = 0.0
+function get_fasta_metadata(path::AbstractString, sample_size::Integer=10000)
+    read_counter = 0
+    read_length_sum = 0
+    gc_content_sum = 0.0
+
+    byte_counter = 0
+    total_file_size = filesize(path)
 
     reader = FASTAReader(open(path, "r"))
-    
-    for record in reader
-        read_count += 1
 
-        read_length_sum += seqsize(record)
+    for record in reader
+        read_counter += 1
+        
+        byte_counter += record.description_len + record.sequence_len + 3
+
+        read_length_sum += record.sequence_len
         gc_content_sum += gc_content(sequence(LongDNA{4}, record))
-        if read_count >= sample_size break end
-    end
-    
-    for _ in reader
-        read_count += 1
+        if read_counter >= sample_size break end
     end
 
     close(reader)
+
+    read_count = read_counter * total_file_size ÷ byte_counter
 
     mean_read_length = read_length_sum ÷ min(read_count, sample_size)
     mean_gc_content = gc_content_sum / min(read_count, sample_size)
@@ -84,16 +87,14 @@ struct DatafileMetadata
     read_count::Int
     read_length::Int
     gc_content::Float64
-    #fastaindex?
 end
 
 function DatafileMetadata(path::AbstractString)::DatafileMetadata
-    DatafileMetadata(path, filesize(path), sample_fasta(path)...)
+    DatafileMetadata(path, filesize(path), get_fasta_metadata(path)...)
 end
 
 function DatafileMetadata(paths::Vector{<:AbstractString})::Vector{DatafileMetadata}
-    read_count, read_length, gc_content = sample_fasta(paths[1])
-    [DatafileMetadata(path, filesize(path), read_count, read_length, gc_content) for path in paths]
+    DatafileMetadata.(paths)
 end
 
 export DatafileMetadata

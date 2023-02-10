@@ -88,7 +88,7 @@ end
 
 
 @testset "main.jl" begin
-    snipe_reads(
+    reads = snipe_reads(
         "test_reference.fasta",
         ["SRR123.fasta"],
         k = 6,
@@ -96,5 +96,7 @@ end
         save_data = false,
         create_plots = false,
     )
+    @test Set(reads.read_index) == Set([1, 2])
 end
 
+test_snipe()

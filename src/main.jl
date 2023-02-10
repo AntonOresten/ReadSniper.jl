@@ -7,10 +7,11 @@ function snipe_reads(
     output_dir::AbstractString = "",
     k::Int = 7,
     step::Int = 1,
-    t_adjustment::Int = 0,
-    show_progress::Bool = true,
+    write_reads::Bool = false,
     save_data::Bool = true,
     create_plots::Bool = true,
+    show_progress::Bool = true,
+    t_adjustment::Int = 0,
 )
 
     reference = Reference(reference_file_path, k)
@@ -24,10 +25,10 @@ function snipe_reads(
     end
 
     # calculate read score threshold for filtering 
-    estimated_score_distribution = spurious_score_distribution(k, reference, datafile_list)
+    expected_score_distribution = estimate_score_distribution(k, reference, datafile_list)
     threshold = max(
-        first_true_after_false(x->x<1, estimated_score_distribution),
-        findfirst(==(maximum(estimated_score_distribution)), estimated_score_distribution)
+        first_true_after_false(x->x<1, expected_score_distribution),
+        findfirst(==(maximum(expected_score_distribution)), expected_score_distribution)
     ) + t_adjustment
 
     # set up a config that includes run parameters
@@ -35,38 +36,55 @@ function snipe_reads(
     config = Config(k, step, threshold, nthreads)
     @info "Config" k step threshold nthreads
 
-    println()
-    reads_SOA, match_frequencies = analyse_dataset(config, reference, datafile_list, show_progress)
-    println()
+    if show_progress println() end
+    reads, score_bins = analyse_dataset(
+        config,
+        reference,
+        datafile_list,
+        show_progress,
+    )
+    if show_progress println() end
+
+    if write_reads
+        reads_file_basename = split(splitext(basename(datafiles[1]))[1], "_")[1]
+        reads_file_path = joinpath(output_dir, reads_file_basename)*"-sniped.fasta"
+        @info "Writing sniped reads to '$(reads_file_path)'"
+        
+        read_index_set = Set(reads.read_index)
+        filter_fasta(read_index_set, datafile_paths, reads_file_path)
+    end
+
+    score_vector = getindex.(score_bins, 1)
+    frequency_vector = getindex.(score_bins, 2)
     
     suffix = "k$(k)s$(step)"
-    output_folder = joinpath(output_dir, replace(splitext("$(suffix)-$(now())")[1], ":" => ""))
+    result_dir = joinpath(output_dir, replace(splitext("$(suffix)-$(now())")[1], ":" => ""))
 
     if save_data
-        @info "Saving files to '$(output_folder)'..."
+        @info "Saving files to '$(result_dir)'..."
 
-        if !ispath(output_folder) mkpath(output_folder) end
+        if !ispath(result_dir) mkpath(result_dir) end
 
-        CSV.write(joinpath(output_folder, "reads.csv"), reads_SOA)
-        CSV.write(joinpath(output_folder, "match_activity.csv"), match_frequencies)
+        CSV.write(joinpath(result_dir, "reads.csv"), reads)
+        CSV.write(joinpath(result_dir, "score_distribution.csv"), (score=score_vector, frequency=frequency_vector))
     end
     
-    # reads_SOA = CSV.read("$output_folder/reads-$suffix.csv", NamedTuple)
-    # match_frequencies = CSV.read("$output_folder/score_distr-$suffix.csv", NamedTuple)
+    # reads = CSV.read("$result_dir/reads-$suffix.csv", NamedTuple)
+    # score_distribution = CSV.read("$result_dir/score_distr-$suffix.csv", NamedTuple)
 
     if create_plots
-        @info "Saving plots to '$(output_folder)'..."
+        @info "Saving plots to '$(result_dir)'..."
         
-        if !ispath(output_folder) mkpath(output_folder) end
+        if !ispath(result_dir) mkpath(result_dir) end
 
         score_distribution_plot(
-            match_frequencies.matches,
-            match_frequencies.frequency,
+            score_vector,
+            frequency_vector,
             k,
             step,
             datafile_list[1].read_length,
-            estimated_score_distribution,
-            joinpath(output_folder, "score_distribution.svg"),
+            expected_score_distribution,
+            joinpath(result_dir, "score_distribution.svg"),
         )
 
         T = 8
@@ -76,29 +94,30 @@ function snipe_reads(
         push!(thresholds, upper_threshold)
         
         activity_plot(
-            reads_SOA,
+            reads,
             reference.length,
             config.k,
             thresholds,
-            joinpath(output_folder, "match_activity.svg"),
+            joinpath(result_dir, "match_activity.svg"),
             true,
         )
     end
 
-    return reads_SOA
+    return reads
 end
 
 export snipe_reads
 
 
-function test_snipe()
+function test_snipe(SRR_ID::AbstractString = "SRR10873757")
     snipe_reads(
-        "C:/Users/anton/RSData/reference/dummy.fasta",
-        ["SRR10873757_1.fasta", "SRR10873757_2.fasta"],
-        datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/SRR10873757",
+        "C:/Users/anton/RSData/reference/reference.fasta",
+        ["$(SRR_ID)_1.fasta", "$(SRR_ID)_2.fasta"],
+        datafile_dir = "C:/Users/anton/RSData/datasets/fasta-files/$(SRR_ID)",
         output_dir = "output",
         k = 8,
-        step = 3,
+        step = 4,
+        write_reads = true,
         save_data = true,
         create_plots = true,
     )

@@ -11,25 +11,24 @@ function scattered_scanning(
     read_count = sum([datafile.read_count for datafile in datafile_list])
     reads_scanned = zeros(Int, config.nthreads)
 
+    # Results accumulate into a set for each thread
     read_result_sets = [Set{ReadResult}() for _ in 1:config.nthreads]
     score_frequency_dicts = [Dict{Int32, Int32}() for _ in 1:config.nthreads]
 
-    if show_progress progress_bar = ProgressBar(config, file_count, read_count, config.nthreads) end
+    if show_progress progress_bar = ProgressBar(config, file_count, read_count) end
     for (file_number, datafile) in collect(enumerate(datafile_list))
         if show_progress update(progress_bar, file_number-1, sum(reads_scanned), sum(length(rs) for rs in read_result_sets)) end
 
         readers = [FASTAReader(open(datafile.path, "r"), copy=false) for _ in 1:config.nthreads]
-        number_of_readers = length(readers)
-        reader_window_size = datafile.read_count ÷ number_of_readers
 
         Threads.@threads for (i, reader) in collect(enumerate(readers))
+            # i:th reader skips i-1 records
             for _ in 1:i-1
                 if !eof(reader) first(reader) end
             end
             read_index = i - 1
-            while !eof(reader)
+            for record in reader
                 read_index += 1
-                record = first(reader)
                 if !iszero((read_index - 1) % config.nthreads - (i - 1)) continue end
 
                 reads_scanned[i] += 1
@@ -40,7 +39,7 @@ function scattered_scanning(
                     push!(read_result_sets[i], ReadResult(read_index, ref_range_start, ref_range_end, score))
                 end
 
-                if show_progress && i == 1 && iszero(read_index % 137)
+                if show_progress && i == 1 && iszero(read_index % 11)
                     update(progress_bar, file_number-1, sum(reads_scanned), sum(length(rs) for rs in read_result_sets))
                 end
             end
@@ -54,9 +53,11 @@ function scattered_scanning(
         end
     end
 
-    if show_progress finish(progress_bar, sum(length(rs) for rs in read_result_sets)) end
+    if show_progress finish(progress_bar, sum(reads_scanned), sum(length(rs) for rs in read_result_sets)) end
 
-    return read_result_sets
+    read_results = StructArray(sort!(vcat(collect.(read_result_sets)...), by=rr->rr.score, rev=true))
+
+    return read_results
 end
 
 
@@ -68,13 +69,10 @@ function analyse_dataset(
 )
     score_frequency_dict = Dict{Int32, Int32}()
 
-    read_result_sets = scattered_scanning(config, reference, datafile_list, score_frequency_dict, show_progress)
-    read_result_SOA = sort!(StructArray(vcat([collect(rr_set) for rr_set in read_result_sets]...)), by=result->result.score, rev=true)
+    read_results = scattered_scanning(config, reference, datafile_list, score_frequency_dict, show_progress)
+    score_bins = sort!(collect(score_frequency_dict), by=pair->pair[1])
 
-    sorted_match_bins = sort!(collect(score_frequency_dict), by=pair->pair[1])
-    matches, frequency = getindex.(sorted_match_bins, 1), getindex.(sorted_match_bins, 2)
-
-    return read_result_SOA, (matches=matches, frequency=frequency)
+    return read_results, score_bins
 end
 
 export analyse_dataset

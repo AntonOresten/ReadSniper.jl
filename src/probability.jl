@@ -20,7 +20,7 @@ function binomial_probability(n::Int, x::Int, p::AbstractFloat)
 end
 
 
-function spurious_score_distribution(
+function estimate_score_distribution(
     k::Int,
     reference::Reference,
     datafile_list::Vector{DatafileMetadata},
@@ -31,7 +31,7 @@ function spurious_score_distribution(
 
     # The important thing here is to have an approximation of a random score distribution that scales correctly with k and read length.
     z = 3
-    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)/sqrt(read_length)*((k-z)/(8-z)))^reference.unique_kmer_count
+    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*sqrt(read_length)/250*((k-z)/(8-z)))^reference.unique_kmer_count
     #total_read_count * binomial_probability.(read_length, 0:read_length, p)
 
     #p = 1 - (1 - (1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*(read_length-k+1)/(reference.length - k + 1))^(2*(reference.length - k + 1)/reference.unique_kmer_count)))^(reference.unique_kmer_count)
@@ -39,8 +39,8 @@ function spurious_score_distribution(
     total_read_count * binomial_probability.(read_length, 0:read_length, p)
 end
 
-export spurious_score_distribution
+export estimate_score_distribution
 
-#println(findfirst(map(x->x[2]<0&&x[1]>15,enumerate(log10.(spurious_match_distribution(8, 9360, 246, 2575656))))))
+#println(findfirst(map(x->x[2]<0&&x[1]>15,enumerate(log10.(estimate_match_distribution(8, 9360, 246, 2575656))))))
 
 export P_ACGT, P_kmer_match

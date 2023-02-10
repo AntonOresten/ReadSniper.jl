@@ -8,6 +8,7 @@ function init_score_distribution_plot(
 )
     plot(
         yscale = :log10,
+        yticks = 10,
         ylims = (1, Inf),
         xlims = (0, xlim_upper+10),
         tickfont = font(10, "Computer Modern"),
@@ -15,7 +16,6 @@ function init_score_distribution_plot(
         minorgrid = true,
         xlabel = "Read score",
         ylabel = "Frequency",
-        yticks = [1e0, 1e1, 1e2, 1e3, 1e4, 1e5],
         yminorgrid = true,
         legendfont = font(10, "Computer Modern"),
         legend_position = :topright, 
@@ -39,7 +39,9 @@ function score_distribution_plot(
 
     init_score_distribution_plot(xlim_upper)
 
-    plot!(matches, (frequency .+ (step-1)) .÷ step,
+    adjusted_frequency = (frequency .+ (step-1)) .÷ step
+
+    plot!(matches, adjusted_frequency,
         color = result_color,
         fillalpha = 0.5,
         fillrange = 1,
@@ -121,21 +123,20 @@ function activity_plot(
     N = length(activity_vectors)
     colors = range(colorant"plum", colorant"darkmagenta", length=N)
     
-    log_mode_min = 0.8
+    log_mode_min = 0.9
     plot(
         tickfont = font(10, "Computer Modern"),
         guidefont = font(12, "Computer Modern"),
         xlabel = "Position in reference",
         ylabel = "Match activity",
         yscale = log_scale ? :log10 : :identity,
-        ylims = log_scale ? (log_mode_min, Inf) : (0, Inf),
-        yticks = 3,
+        ylim = log_scale ? (log_mode_min, Inf) : (0, Inf),
         yminorgrid = true,
         legendfont = font(10, "Computer Modern"),
         fmt = :svg,
         legend  = :outertopright,
         xformatter = :plain,
-        xticks = 5,
+        xticks = [1, 2500, 5000, 7500, 9366],
     )
     for (i, vec) in enumerate(activity_vectors)
         values = map(x->max(0.1, x), vec)
