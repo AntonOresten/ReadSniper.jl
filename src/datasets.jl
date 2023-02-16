@@ -63,7 +63,7 @@ function get_fasta_metadata(path::AbstractString, sample_size::Integer=10000)
     for record in reader
         read_counter += 1
         
-        byte_counter += record.description_len + record.sequence_len + 3
+        byte_counter += record.description_len + record.sequence_len + 3 + 3
 
         read_length_sum += record.sequence_len
         gc_content_sum += gc_content(sequence(LongDNA{4}, record))
@@ -72,10 +72,10 @@ function get_fasta_metadata(path::AbstractString, sample_size::Integer=10000)
 
     close(reader)
 
-    read_count = read_counter * total_file_size ÷ byte_counter
+    read_count = max(read_counter, read_counter * total_file_size ÷ byte_counter)
 
-    mean_read_length = read_length_sum ÷ min(read_count, sample_size)
-    mean_gc_content = gc_content_sum / min(read_count, sample_size)
+    mean_read_length = read_length_sum ÷ min(read_counter, sample_size)
+    mean_gc_content = gc_content_sum / min(read_counter, sample_size)
 
     return read_count, mean_read_length, mean_gc_content
 end

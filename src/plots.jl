@@ -134,7 +134,7 @@ function activity_plot(
         yminorgrid = true,
         legendfont = font(10, "Computer Modern"),
         fmt = :svg,
-        legend  = :outertopright,
+        legend = :outertopright,
         xformatter = :plain,
         xticks = [1, 2500, 5000, 7500, 9366],
     )

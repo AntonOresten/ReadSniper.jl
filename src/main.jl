@@ -60,6 +60,10 @@ function snipe_reads(
     suffix = "k$(k)s$(step)"
     result_dir = joinpath(output_dir, replace(splitext("$(suffix)-$(now())")[1], ":" => ""))
 
+    if (save_data || create_plots) && !ispath(result_dir)
+        mkpath(result_dir) 
+    end
+
     if save_data
         @info "Saving files to '$(result_dir)'..."
 
@@ -68,14 +72,9 @@ function snipe_reads(
         CSV.write(joinpath(result_dir, "reads.csv"), reads)
         CSV.write(joinpath(result_dir, "score_distribution.csv"), (score=score_vector, frequency=frequency_vector))
     end
-    
-    # reads = CSV.read("$result_dir/reads-$suffix.csv", NamedTuple)
-    # score_distribution = CSV.read("$result_dir/score_distr-$suffix.csv", NamedTuple)
 
     if create_plots
         @info "Saving plots to '$(result_dir)'..."
-        
-        if !ispath(result_dir) mkpath(result_dir) end
 
         score_distribution_plot(
             score_vector,

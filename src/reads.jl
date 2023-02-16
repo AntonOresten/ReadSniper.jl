@@ -11,7 +11,7 @@ end
 function scan_read(
     config::Config,
     record::FASTARecord,
-    kmer_dict::Dict{LongDNA{4}, Vector{Int64}},
+    kmer_dict::Dict{LongDNA{4}, Vector{Int}},
 )::Tuple{Int,Int,Int}
 
     read_length::Int = seqsize(record)
@@ -21,9 +21,9 @@ function scan_read(
     if length(match_indices) == 0 return (0, 0, 0) end
 
     lise = LISE(match_indices)
-    score::Int64, range_start::Int64, range_end::Int64 = max_subseq_in_range(lise, read_length)
-    ref_range_start::Int64 = range_start == 0 ? 0 : lise[range_start]
-    ref_range_end::Int64 = range_end == 0 ? 0 : lise[range_end]
+    score::Int, range_start::Int, range_end::Int = max_subseq_in_range(lise, read_length)
+    ref_range_start::Int = range_start == 0 ? 0 : lise[range_start]
+    ref_range_end::Int = range_end == 0 ? 0 : lise[range_end]
 
     return config.step*score, ref_range_start * !(ref_range_start < 0 < ref_range_end), ref_range_end
 end
