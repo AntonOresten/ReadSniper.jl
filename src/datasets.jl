@@ -81,9 +81,13 @@ function get_fasta_metadata(
     mean_sequence_length = sequence_length_sum ÷ record_counter
     mean_gc_content = gc_content_sum / record_counter
 
-    record_count = 0
-    for i in 1:8
-        record_count = Int((total_file_size - index_occur_count * cumulative_digit_count(record_count)) ÷ record_size)
+    if record_counter < sample_size
+        record_count = record_counter
+    else
+        record_count = 0
+        for _ in 1:4
+            record_count = Int((total_file_size - index_occur_count * cumulative_digit_count(record_count)) ÷ record_size)
+        end
     end
 
     return record_count, mean_sequence_length, mean_gc_content

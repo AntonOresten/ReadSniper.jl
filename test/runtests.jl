@@ -91,12 +91,10 @@ end
     reads = snipe_reads(
         "test_reference.fasta",
         ["SRR123.fasta"],
-        k = 6,
+        k = 7,
         step = 1,
         save_data = false,
         create_plots = false,
     )
     @test Set(reads.read_index) == Set([1, 2])
 end
-
-test_snipe()
