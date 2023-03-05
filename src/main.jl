@@ -108,6 +108,7 @@ end
 export snipe_reads
 
 
+#=
 function test_snipe(SRR_ID::AbstractString = "SRR10873757")
     snipe_reads(
         "C:/Users/anton/RSData/reference/reference.fasta",
@@ -121,5 +122,4 @@ function test_snipe(SRR_ID::AbstractString = "SRR10873757")
         create_plots = true,
     )
 end
-
-export test_snipe
+=#

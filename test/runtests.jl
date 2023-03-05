@@ -95,6 +95,7 @@ end
         step = 1,
         save_data = false,
         create_plots = false,
+        show_progress = false,
     )
     @test Set(reads.read_index) == Set([1, 2])
 end
