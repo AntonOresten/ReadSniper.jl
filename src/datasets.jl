@@ -42,7 +42,7 @@ function showinfo(reference::Reference)
         length: $(reference.length)nt,
         unique k-mers: $(reference.unique_kmer_count)
         GC-content: $(round(100*reference.gc_content, digits=2))%
-     """
+      """
 end
 
 
@@ -50,9 +50,13 @@ end
 Assumes that the first N reads are representative of the whole Datafile, both in terms of read length and GC content.
 Sample size can be set to Inf, such that all read lengths and GC contents get counted.
 """
-function get_fasta_metadata(path::AbstractString, sample_size::Integer=10000)
-    read_counter = 0
-    read_length_sum = 0
+function get_fasta_metadata(
+    path::AbstractString,
+    sample_size::Integer = 10000,
+    index_occur_count::Integer = 2,
+)
+    record_counter = 0
+    sequence_length_sum = 0
     gc_content_sum = 0.0
 
     byte_counter = 0
@@ -61,23 +65,28 @@ function get_fasta_metadata(path::AbstractString, sample_size::Integer=10000)
     reader = FASTAReader(open(path, "r"))
 
     for record in reader
-        read_counter += 1
+        record_counter += 1
         
-        byte_counter += record.description_len + record.sequence_len + 3 + 3
+        byte_counter += record.description_len - (ndigits(record_counter) * index_occur_count) + record.sequence_len + 3 # >\n\n
 
-        read_length_sum += record.sequence_len
+        sequence_length_sum += record.sequence_len
         gc_content_sum += gc_content(sequence(LongDNA{4}, record))
-        if read_counter >= sample_size break end
+        if record_counter >= sample_size break end
     end
 
     close(reader)
 
-    read_count = max(read_counter, read_counter * total_file_size ÷ byte_counter)
+    record_size = byte_counter / record_counter
 
-    mean_read_length = read_length_sum ÷ min(read_counter, sample_size)
-    mean_gc_content = gc_content_sum / min(read_counter, sample_size)
+    mean_sequence_length = sequence_length_sum ÷ record_counter
+    mean_gc_content = gc_content_sum / record_counter
 
-    return read_count, mean_read_length, mean_gc_content
+    record_count = 0
+    for i in 1:8
+        record_count = Int((total_file_size - index_occur_count * cumulative_digit_count(record_count)) ÷ record_size)
+    end
+
+    return record_count, mean_sequence_length, mean_gc_content
 end
 
 
@@ -105,5 +114,5 @@ function showinfo(i::Integer, datafile::DatafileMetadata)
         reads: $(datafile.read_count)
         read length: $(datafile.read_length)
         GC-content: $(round(100*datafile.gc_content, digits=2))%
-     """
+      """
 end

@@ -1,4 +1,20 @@
 
+function cumulative_digit_count(N::Integer)
+    digit_sum = 0
+
+    digits_per_number = 1
+    milestone = 10
+    for i in 1:N
+        if i == milestone
+            digits_per_number += 1
+            milestone *= 10
+        end
+        digit_sum += digits_per_number
+    end
+
+    digit_sum
+end
+
 
 function find_subarrays(arr::Array{Bool,1}, L::Int, T::Int)
     subarrays::Vector{Tuple{Int,Int,Int}} = []
