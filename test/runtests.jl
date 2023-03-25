@@ -1,9 +1,11 @@
 
 using ReadSniper
 using Test
+using Logging
 
 using BioSequences, FASTX
 
+Logging.global_logger(SimpleLogger(stdout, Logging.Warn))
 
 @testset "utils.jl" begin
     @test lis([1,7,14,4,5,4,6,15]) == 5
