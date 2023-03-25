@@ -206,3 +206,52 @@ function first_true_after_false(func::Function, vector::Vector{<:Number})
         return find_nth_true_region(1, func, vector)
     end
 end
+
+
+function constrained_LIS(arr::Vector{Int}, span::Int)
+    n = length(arr)
+    if n == 0
+        return (0, 0, 0)
+    end
+
+    dp = ones(Int, n)
+    max_lis = 1
+    max_lis_end = 1
+
+    for i in 2:n
+        for j in 1:i-1
+            if arr[i] > arr[j] && arr[i] - arr[j] <= span
+                if dp[j] + 1 > dp[i]
+                    dp[i] = dp[j] + 1
+                    if dp[i] > max_lis
+                        max_lis = dp[i]
+                        max_lis_end = i
+                    end
+                end
+            end
+        end
+    end
+
+    max_lis_start = max_lis_end
+    for i in max_lis_end-1:-1:1
+        if dp[i] == dp[max_lis_start] - 1 && arr[i] < arr[max_lis_start] && arr[max_lis_end] - arr[i] <= span
+            max_lis_start = i
+        end
+    end
+
+    return (max_lis, arr[max_lis_start], arr[max_lis_end])
+end
+
+function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
+
+    # Reverse sort each vector
+    for vec in vectors
+        sort!(vec, rev=true)
+    end
+
+    # Concatenate all vectors into one
+    concatenated = reduce(vcat, vectors)
+
+    # Find the longest increasing subsequence with the span constraint
+    return constrained_LIS(concatenated, span)
+end

@@ -4,7 +4,7 @@
 function dna_sampler(GC_ratio::Float64)::SamplerWeighted
     SamplerWeighted(
         dna"ACGTN",
-        [1-GC_ratio, GC_ratio, GC_ratio, 1-GC_ratio] .* 0.5,
+        Float64[1-GC_ratio, GC_ratio, GC_ratio, 1-GC_ratio] .* 0.5,
     )
 end
 

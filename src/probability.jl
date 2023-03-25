@@ -30,8 +30,7 @@ function estimate_score_distribution(
     read_length = datafile_list[1].read_length
 
     # The important thing here is to have an approximation of a random score distribution that scales correctly with k and read length.
-    z = 3
-    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*sqrt(read_length)/250*((k-z)/(8-z)))^reference.unique_kmer_count
+    p = 1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*sqrt(read_length)/150*(k > 5 ? (k - 5)^1.4 : 1))^reference.unique_kmer_count
     #total_read_count * binomial_probability.(read_length, 0:read_length, p)
 
     #p = 1 - (1 - (1 - (1 - P_kmer_match(k, reference.gc_content, datasets_gc_content)*(read_length-k+1)/(reference.length - k + 1))^(2*(reference.length - k + 1)/reference.unique_kmer_count)))^(reference.unique_kmer_count)

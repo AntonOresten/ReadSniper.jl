@@ -12,20 +12,18 @@ function scan_read(
     config::Config,
     record::FASTARecord,
     kmer_dict::Dict{LongDNA{4}, Vector{Int}},
+    read_num::Int,
 )::Tuple{Int,Int,Int}
 
     read_length::Int = seqsize(record)
     read_sequence::LongDNA{4} = sequence(LongDNA{4}, record)
-    match_indices::Vector{Int} = vcat(kmer_match_indices(read_sequence, kmer_dict, config.k, config.step)...)
+    index_vectors::Vector{Vector{Int}} = kmer_match_indices(read_sequence, kmer_dict, config.k, config.step)
 
-    if length(match_indices) == 0 return (0, 0, 0) end
+    if length(index_vectors) == 0 return (0, 0, 0) end
 
-    lise = LISE(match_indices)
-    score::Int, range_start::Int, range_end::Int = max_subseq_in_range(lise, read_length)
-    ref_range_start::Int = range_start == 0 ? 0 : lise[range_start]
-    ref_range_end::Int = range_end == 0 ? 0 : lise[range_end]
-
-    return config.step*score, ref_range_start * !(ref_range_start < 0 < ref_range_end), ref_range_end
+    score::Int, ref_range_start::Int, ref_range_end::Int = constrained_multi_choice_LIS(index_vectors, read_length)
+    
+    return score*config.step, ref_range_start * !(ref_range_start < 0 < ref_range_end), ref_range_end
 end
 
 export scan_read
