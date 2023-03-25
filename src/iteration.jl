@@ -33,7 +33,7 @@ function scattered_scanning(
 
                 reads_scanned[i] += 1
 
-                score, ref_range_start, ref_range_end = scan_read(config, record, reference.kmer_dict, read_index)
+                score, ref_range_start, ref_range_end = scan_read(config, record, reference.kmer_dict)
                 increment_dict_value!(score, 1, score_frequency_dicts[i])
                 if score >= config.threshold
                     push!(read_result_sets[i], ReadResult(read_index, ref_range_start, ref_range_end, score))

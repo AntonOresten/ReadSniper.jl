@@ -12,7 +12,6 @@ function scan_read(
     config::Config,
     record::FASTARecord,
     kmer_dict::Dict{LongDNA{4}, Vector{Int}},
-    read_num::Int,
 )::Tuple{Int,Int,Int}
 
     read_length::Int = seqsize(record)
