@@ -14,8 +14,7 @@ To install ReadSniper, simply add the package using Julia's package manager:
 ## Installation
 To install ReadSniper, simply add the package using Julia's package manager:
 ```julia
-using Pkg
-Pkg.add(url="https://github.com/Periareion/ReadSniper.jl.git")
+using Pkg; Pkg.add(url="https://github.com/Periareion/ReadSniper.jl.git")
 ```
 
 ## Usage
