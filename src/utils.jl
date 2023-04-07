@@ -208,7 +208,7 @@ function first_true_after_false(func::Function, vector::Vector{<:Number})
 end
 
 
-function constrained_LIS(arr::Vector{Int}, span::Int)
+@inline function constrained_LIS(arr::Vector{Int}, span::Int)
     n = length(arr)
     if n == 0
         return (0, 0, 0)
@@ -242,7 +242,7 @@ function constrained_LIS(arr::Vector{Int}, span::Int)
     return (max_lis, arr[max_lis_start], arr[max_lis_end])
 end
 
-function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
+@inline function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
 
     # Reverse sort each vector
     for vec in vectors

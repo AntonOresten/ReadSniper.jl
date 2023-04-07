@@ -108,7 +108,7 @@ end
 export snipe_reads
 
 
-function test_snipe(k = 7, step = 3, SRR_ID::AbstractString = "SRR10873757")
+@inline function test_snipe(k = 9, step = 3, SRR_ID::AbstractString = "SRR10873757")
     snipe_reads(
         "C:/Users/anton/RSData/reference/reference.fasta",
         ["$(SRR_ID)_1.fasta", "$(SRR_ID)_2.fasta"],
@@ -116,9 +116,9 @@ function test_snipe(k = 7, step = 3, SRR_ID::AbstractString = "SRR10873757")
         output_dir = "output",
         k = k,
         step = step,
-        write_reads = true,
-        save_data = true,
-        create_plots = true,
+        write_reads = false,
+        save_data = false,
+        create_plots = false,
     )
 end
 

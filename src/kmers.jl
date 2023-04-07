@@ -36,7 +36,7 @@ export kmer_index_dict
 
 const Int_vector_empty = Int[]
 
-function kmer_match_indices(
+@inline function kmer_match_indices(
     seq::LongDNA{4},
     kmer_dict::Dict{LongDNA{4}, Vector{Int}},
     k::Int,
