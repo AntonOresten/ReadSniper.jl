@@ -5,11 +5,9 @@
 ReadSniper is a lightweight and (arguably) efficient Julia package designed for mining metagenomic datasets for specific sequences. It is particularly useful for identifying novel or unclassified virus sequences in large-scale genomic data. The package works by rapidly searching for k-mer matches between a reference genome and the reads in a dataset, enabling quick identification of similar sequences even in the presence of mutations.
 
 ## Features
-Fast search using k-mer matching and the longest increasing subsequence algorithm
-Customizable k-value for k-mer search, with optimal performance at k=8 or 9
-Simple and efficient Julia implementation that can be integrated with other Julia packages
-Installation
-To install ReadSniper, simply add the package using Julia's package manager:
+- Fast search using k-mer matching and the longest increasing subsequence algorithm
+- Customizable k-value for k-mer search, with optimal performance at with a $k$-value of $7$ or $9$
+- Simple and efficient Julia implementation that can be integrated with other Julia packages
 
 ## Installation
 To install ReadSniper, simply add the package using Julia's package manager:
