@@ -18,7 +18,7 @@ using Pkg; Pkg.add(url="https://github.com/Periareion/ReadSniper.jl.git")
 To use ReadSniper, you will need to provide a reference genome in FASTA format and a metagenomic dataset containing reads in FASTA format (FASTQ format will eventually be supported). Use the `snipe_reads` function to search for sequences similar to the reference genome.
 
 ## Limitations and Future Improvements
-- Currently optimized for datasets with higher percentage identity (pident) RdRp matches
+- Currently suitable for datasets with high percentage identity (pident) RdRp matches (>90%)
 - Performance may be slower with lower k-values due to increased number of k-mer matches
 - Further comparison with other tools like BLAST and NextGenMap is necessary to fully assess the viability of ReadSniper
 - Integration with other Julia packages, such as de novo genome assembly packages, could create a more streamlined workflow
