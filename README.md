@@ -25,6 +25,3 @@ To use ReadSniper, you will need to provide a reference genome in FASTA format a
 
 ## Contributing
 Contributions to ReadSniper are welcome! Please feel free to open issues or submit pull requests for bug fixes, improvements, or new features. If you have any questions, please don't hesitate to reach out.
-
-License
-ReadSniper is released under the MIT License.
