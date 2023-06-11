@@ -75,7 +75,7 @@ export lis
 """
 Longest increasing subsequence elements
 """
-function LISE(arr::Array{Int,1})
+function LISE(arr::Vector{Int})
     n = length(arr)
     dp = fill(1, n)
     parents = fill(-1, n)
@@ -108,6 +108,37 @@ function LISE(arr::Array{Int,1})
 end
 
 export LISE
+
+function longest_span_sequence(sorted_array::Vector{Int}, span::Int)
+    if isempty(sorted_array) || span <= 0
+        return Vector{Int}()
+    end
+
+    start_index = 1
+    end_index = 1
+    longest_start = 1
+    longest_end = 1
+
+    while end_index <= length(sorted_array)
+        current_span = sorted_array[end_index] - sorted_array[start_index] + 1
+
+        if current_span < span
+            end_index += 1
+        elseif current_span > span
+            start_index += 1
+        else
+            if (end_index - start_index) > (longest_end - longest_start)
+                longest_start = start_index
+                longest_end = end_index
+            end
+            start_index += 1
+        end
+    end
+
+    return sorted_array[longest_start:longest_end]
+end
+
+export longest_span_sequence
 
 
 function nunique(a::SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true})
@@ -243,7 +274,6 @@ end
 end
 
 @inline function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
-
     # Reverse sort each vector
     for vec in vectors
         sort!(vec, rev=true)
@@ -252,6 +282,10 @@ end
     # Concatenate all vectors into one
     concatenated = reduce(vcat, vectors)
 
+    lise = LISE(concatenated)
+
+    validated_lise = longest_span_sequence(lise, span)
+
     # Find the longest increasing subsequence with the span constraint
-    return constrained_LIS(concatenated, span)
+    return length(validated_lise), validated_lise[1], validated_lise[end]
 end
