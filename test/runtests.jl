@@ -8,8 +8,11 @@ using BioSequences, FASTX
 Logging.global_logger(SimpleLogger(stdout, Logging.Warn))
 
 @testset "utils.jl" begin
-    @test lis([1,7,14,4,5,4,6,15]) == 5
-    @test lis([20,1,7,14,4,5,5,6,15]) == 5
+    @test length(LISE([1,7,14,4,5,4,6,15])) == 5
+    @test length(LISE([20,1,7,14,4,5,5,6,15])) == 5
+    println(LISE([20,1,7,14,4,5,5,6,15]))
+    println(longest_span_sequence(LISE([20,1,7,14,4,5,5,6,15]), 10))
+    #@test length(longest_span_sequence(LISE([20,1,7,14,4,5,5,6,15]), 10)) == 4
     
     dict = Dict(1 => 1, 2 => 1)
     increment_dict_value!(1, 1, dict)

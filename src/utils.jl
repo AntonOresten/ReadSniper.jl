@@ -110,7 +110,7 @@ end
 export LISE
 
 function longest_span_sequence(sorted_array::Vector{Int}, span::Int)
-    if isempty(sorted_array) || span <= 0
+    if isempty(sorted_array) || span < 0
         return Vector{Int}()
     end
 
@@ -120,23 +120,22 @@ function longest_span_sequence(sorted_array::Vector{Int}, span::Int)
     longest_end = 1
 
     while end_index <= length(sorted_array)
-        current_span = sorted_array[end_index] - sorted_array[start_index] + 1
+        current_span = sorted_array[end_index] - sorted_array[start_index]
 
-        if current_span < span
-            end_index += 1
-        elseif current_span > span
-            start_index += 1
-        else
-            if (end_index - start_index) > (longest_end - longest_start)
+        if current_span <= span
+            if (end_index - start_index) >= (longest_end - longest_start)
                 longest_start = start_index
                 longest_end = end_index
             end
+            end_index += 1
+        else
             start_index += 1
         end
     end
 
     return sorted_array[longest_start:longest_end]
 end
+
 
 export longest_span_sequence
 
