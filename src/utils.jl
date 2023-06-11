@@ -272,7 +272,7 @@ end
     return (max_lis, arr[max_lis_start], arr[max_lis_end])
 end
 
-@inline function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
+function constrained_multi_choice_LIS(vectors::Vector{Vector{Int}}, span::Int)
     # Reverse sort each vector
     for vec in vectors
         sort!(vec, rev=true)
@@ -284,7 +284,9 @@ end
     lise = LISE(concatenated)
 
     validated_lise = longest_span_sequence(lise, span)
-
+    
     # Find the longest increasing subsequence with the span constraint
-    return length(validated_lise), validated_lise[1], validated_lise[end]
+    (length(validated_lise) > 0) ? 
+        (length(validated_lise), validated_lise[1], validated_lise[end]) :
+        (0, 0, 0)
 end
